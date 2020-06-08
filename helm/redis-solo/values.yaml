@@ -1,8 +1,8 @@
 namespace: dev-dds
 environment: nonprod
 enableAvi: true
-backwardsCompatable: false
 nameOverride: ""
+backwardsCompatable: false
 fullnameOverride: ""
 metaLabels:
   - name: domain
@@ -13,6 +13,9 @@ metaLabels:
     value: redis-solo
   - name: team
     value: dds
+users:
+  producer: on ~* +@read +@write nopass
+  consumer: on ~* +@read nopass
 redis: 
   stateful: true
   image:

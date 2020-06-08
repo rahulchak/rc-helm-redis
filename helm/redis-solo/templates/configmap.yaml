@@ -21,8 +21,10 @@ data:
     {{ end }}
     {{- if not .Values.backwardsCompatable }}
     masteruser {{ .Release.Name }}-cluster
-    user default on -@all +info nopass
-    user {{ .Release.Name }}-producer on +@write +@read nopass
-    user {{ .Release.Name }}-monitor on +info +ping nopass
-    user {{ .Release.Name }}-admin on allcommands >ADMINPASS
+    user default on -@all +info +ping nopass
+    user {{ .Release.Name }}-admin on ~* allcommands >ADMINPASS
+    user {{ .Release.Name }}-cluster on +@admin nopass
+    {{ range $key, $val := .Values.users }}
+    user {{ $.Release.Name }}-{{ $key }} {{ $val }}
+    {{ end }}
     {{ end }}
