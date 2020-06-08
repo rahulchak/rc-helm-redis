@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "redis-solo.fullname" . }}-redis-config
+  labels:
+    redis-version: "{{ .Release.version }}"
+data:
+  redis.conf: | 
+    {{ with .Values.redis.config }}
+    port {{ .port | quote }}
+    maxmemory {{ .maxmemory | quote }}
+    maxmemory-policy {{ .maxmemoryPolicy | quote }}
+    dir {{ .dir | quote }}
+    appendonly {{ .appendonly | quote }}
+    appendfsync {{ .appendfsync | quote }}
+    repl-diskless-sync {{ .replDisklessSync | quote }}
+    hz {{ .hz | quote }}
+    no-appendfsync-on-rewrite {{ .noAppendfsyncOnRewrite | quote }}
+    auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize | quote }}
+    auto-aof-rewrite-percentage {{ .autoAofRewritePercentage | quote }}
+    {{ end }}
+    {{- if not .Values.backwardsCompatable }}
+    masteruser {{ .Release.Name }}-cluster
+    user default on -@all +info nopass
+    user {{ .Release.Name }}-producer on +@write +@read nopass
+    user {{ .Release.Name }}-monitor on +info +ping nopass
+    user {{ .Release.Name }}-admin on allcommands >ADMINPASS
+    {{ end }}

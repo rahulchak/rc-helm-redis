@@ -1,0 +1,13 @@
+namespace: dev-dds
+environment: nonprod
+metaLabels:
+  - name: environment
+    value: integration
+redis:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      cpu: 200m
+      memory: 1024Mi

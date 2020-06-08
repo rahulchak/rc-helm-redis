@@ -1,0 +1,13 @@
+namespace: dev-dds
+environment: nonprod
+metaLabels:
+  - name: environment
+    value: development
+redis:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 1024Mi
+    requests:
+      cpu: 100m
+      memory: 1024Mi
