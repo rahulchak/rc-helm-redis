@@ -1,0 +1,4 @@
+enableAvi: false
+redis:
+  service:
+    type: ClusterIP

@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+{{ if not .Values.redis.stateful }}
+kind: Deployment
+{{ else if .Values.redis.stateful }}
+kind: StatefulSet
+{{ end }}
+metadata:
+  name: {{ include "redis-solo.fullname" . }}
+  labels:
+    {{- include "redis-solo.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "redis-solo.selectorLabels" . | nindent 6 }}
+  {{ if .Values.redis.stateful }}
+  serviceName: {{ include "redis-solo.fullname" . }}
+  {{ end }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "redis-solo.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "redis-solo.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: disable-thp
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: host-sys
+              mountPath: /host-sys
+          command: ["/bin/sh", "-c"] 
+          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          command: ["/bin/sh"] 
+          args: ["/redis-configs/start-solo.sh"]
+          env:
+          - name: ADMINPASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}
+                key: password
+          volumeMounts:
+          - name: redis-configs
+            mountPath: /redis-configs
+          - name: redis-data
+            mountPath: /data
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redis.service.port }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: redis
+          readinessProbe:
+            tcpSocket:
+              port: redis
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{ if .Values.prometheus.enabled }}
+        - name: {{ .Chart.Name }}-exporter
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+          ports:
+            - name: prometheus
+              containerPort: 9121
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{ end }}
+      volumes:
+        - name: redis-configs
+          configMap:
+            name: {{ include "redis-solo.fullname" . }}-redis-config
+        {{ if not .Values.redis.stateful }}
+        - name: redis-data
+          emptyDir: {}
+        {{ end }}
+        - name: host-sys
+          hostPath:
+            path: /sys
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{ if .Values.redis.stateful }}
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  {{ end }}
