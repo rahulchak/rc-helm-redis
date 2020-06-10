@@ -5,8 +5,8 @@ metadata:
   labels:
     redis-version: "{{ .Release.version }}"
 data:
-  redis.conf: | 
-    {{ with .Values.redis.config }}
+  redis.conf: |- 
+    {{- with .Values.redis.config }}
     port {{ .port | quote }}
     maxmemory {{ .maxmemory | quote }}
     maxmemory-policy {{ .maxmemoryPolicy | quote }}
@@ -19,12 +19,18 @@ data:
     auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize | quote }}
     auto-aof-rewrite-percentage {{ .autoAofRewritePercentage | quote }}
     {{ end }}
-    {{- if not .Values.backwardsCompatable }}
+    {{- if not .Values.backwardsCompatable -}}
     masteruser {{ .Release.Name }}-cluster
     user default on -@all +info +ping nopass
     user {{ .Release.Name }}-admin on ~* allcommands >ADMINPASS
     user {{ .Release.Name }}-cluster on +@admin nopass
-    {{ range $key, $val := .Values.users }}
+    {{ range $key, $val := .Values.users -}}
     user {{ $.Release.Name }}-{{ $key }} {{ $val }}
     {{ end }}
     {{ end }}
+  start-solo.sh: |
+    # Update redis.conf with current password
+    sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
+    
+    # Start redis-server
+    redis-server /data/redis.conf
