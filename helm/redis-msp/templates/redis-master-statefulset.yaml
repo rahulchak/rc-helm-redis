@@ -1,15 +1,14 @@
-{{ if .Values.redis.stateful }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "redis-solo.fullname" . }}
+  name: {{ include "redis-msp.fullname" . }}
   labels:
-    {{- include "redis-solo.labels" . | nindent 4 }}
+    {{- include "redis-msp.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "redis-solo.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "redis-solo.fullname" . }}
+      {{- include "redis-msp.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "redis-msp.fullname" . }}
   template:
     metadata:
     {{- with .Values.podAnnotations }}
@@ -17,9 +16,9 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       labels:
-        {{- include "redis-solo.selectorLabels" . | nindent 8 }}
+        {{- include "redis-msp.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "redis-solo.serviceAccountName" . }}
+      serviceAccountName: {{ include "redis-msp.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
@@ -79,7 +78,7 @@ spec:
       volumes:
         - name: redis-config-volume
           configMap:
-            name: {{ include "redis-solo.fullname" . }}-redis-config
+            name: {{ include "redis-msp.fullname" . }}-redis-config
         - name: host-sys
           hostPath:
             path: /sys
@@ -103,4 +102,3 @@ spec:
       resources:
         requests:
           storage: 1Gi
-{{ end }}

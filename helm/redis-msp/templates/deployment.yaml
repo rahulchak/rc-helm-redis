@@ -5,15 +5,15 @@ kind: Deployment
 kind: StatefulSet
 {{ end }}
 metadata:
-  name: {{ include "redis-solo.fullname" . }}
+  name: {{ include "redis-msp.fullname" . }}
   labels:
-    {{- include "redis-solo.labels" . | nindent 4 }}
+    {{- include "redis-msp.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "redis-solo.selectorLabels" . | nindent 6 }}
+      {{- include "redis-msp.selectorLabels" . | nindent 6 }}
   {{ if .Values.redis.stateful }}
-  serviceName: {{ include "redis-solo.fullname" . }}
+  serviceName: {{ include "redis-msp.fullname" . }}
   {{ end }}
   template:
     metadata:
@@ -22,9 +22,9 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       labels:
-        {{- include "redis-solo.selectorLabels" . | nindent 8 }}
+        {{- include "redis-msp.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "redis-solo.serviceAccountName" . }}
+      serviceAccountName: {{ include "redis-msp.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
@@ -42,7 +42,7 @@ spec:
           image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
           command: ["/bin/sh"] 
-          args: ["/redis-configs/start-solo.sh"]
+          args: ["/redis-configs/start-msp.sh"]
           env:
           - name: ADMINPASS
             valueFrom:
@@ -81,7 +81,7 @@ spec:
       volumes:
         - name: redis-configs
           configMap:
-            name: {{ include "redis-solo.fullname" . }}-redis-config
+            name: {{ include "redis-msp.fullname" . }}-redis-config
         {{ if not .Values.redis.stateful }}
         - name: redis-data
           emptyDir: {}

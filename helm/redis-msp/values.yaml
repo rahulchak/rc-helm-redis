@@ -10,7 +10,7 @@ metaLabels:
   - name: app
     value: redis
   - name: task
-    value: redis-solo
+    value: redis-msp
   - name: team
     value: dds
 users:
@@ -27,8 +27,8 @@ redis:
     type: ClusterIP
     port: 6379
     annotations:
-      app.kubernetes.io/name: redis-solo
-      app.kubernetes.io/instance: redis-solo
+      app.kubernetes.io/name: redis-msp
+      app.kubernetes.io/instance: redis-msp
       app.kubernetes.io/version: 6.0.3
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
