@@ -33,10 +33,6 @@ spec:
           volumeMounts:
             - name: host-sys
               mountPath: /host-sys
-            - name: redis-configs
-              mountPath: /redis-configs
-            - name: redis-data
-              mountPath: /data
           command: ["/bin/sh", "-c"] 
           args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
