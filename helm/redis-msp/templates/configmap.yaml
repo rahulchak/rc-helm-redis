@@ -8,6 +8,7 @@ data:
   redis.conf: |- 
     {{- with .Values.redis.config }}
     port {{ .port | quote }}
+    slave-announce-port {{ .port | quote }}
     maxmemory {{ .maxmemory | quote }}
     maxmemory-policy {{ .maxmemoryPolicy | quote }}
     dir {{ .dir | quote }}
@@ -18,19 +19,51 @@ data:
     no-appendfsync-on-rewrite {{ .noAppendfsyncOnRewrite | quote }}
     auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize | quote }}
     auto-aof-rewrite-percentage {{ .autoAofRewritePercentage | quote }}
+    repl-diskless-sync {{ .replDisklessSync | quote }}
+    repl-timeout {{ .replTimeout | quote }}
+    repl-backlog-size {{ .replBacklogSize | quote }}
     {{ end }}
     {{- if not .Values.backwardsCompatable -}}
     masteruser {{ .Release.Name }}-cluster
+    masterauth ADMINPASS
     user default on -@all +info +ping nopass
     user {{ .Release.Name }}-admin on ~* allcommands >ADMINPASS
-    user {{ .Release.Name }}-cluster on +@admin nopass
+    user {{ .Release.Name }}-cluster nopass +@admin on
     {{ range $key, $val := .Values.users -}}
     user {{ $.Release.Name }}-{{ $key }} {{ $val }}
     {{ end }}
     {{ end }}
+
+  sentinel.conf: |-
+    {{- with .Values.redis.config }}
+    port {{ .port | quote }}
+    dir {{ .dir | quote }}
+    {{ end }}
+    sentinel monitor {{ .Release.Name }} {{ include "redis-msp.fullname" . }}-master-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }} 2
+    sentinel down-after-milliseconds {{ .Release.Name }} 10
+    sentinel parallel-syncs {{ .Release.Name }} 1
+    sentinel failover-timeout {{ .Release.Name }} 10000
+    sentinel announce-ip {{ include "redis-msp.fullname" . }}-sentinel-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+    sentinel announce-port {{ .Values.redis.config.sentinelPort }}
+    sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-cluster
+    
   start-master.sh: |
     # Update redis.conf with current password
     sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
     
     # Start redis-server
-    redis-server /data/redis.conf
+    redis-server /data/redis.conf --slave-announce-ip {{ include "redis-msp.fullname" . }}-master-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+
+  start-slave.sh: |
+    # Update redis.conf with current password
+    sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
+    
+    # Start redis-server
+    redis-server /data/redis.conf --slave-announce-ip {{ include "redis-msp.fullname" . }}-slave-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} --slaveof {{ include "redis-msp.fullname" . }}-master-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }}
+
+  start-sentinel.sh: |
+    # Copy over sentinel.conf
+    cp /redis-configs/sentinel.conf /data/sentinel.conf
+    
+    # Start redis-server
+    redis-server /data/sentinel.conf --sentinel
