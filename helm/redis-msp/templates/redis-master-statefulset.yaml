@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "redis-msp.fullname" . }}
+  name: {{ .Release.Name }}-master
   labels:
     {{- include "redis-msp.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
       {{- include "redis-msp.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "redis-msp.fullname" . }}
+  serviceName: {{ .Release.Name }}-headless
   template:
     metadata:
     {{- with .Values.podAnnotations }}
@@ -27,25 +27,26 @@ spec:
           volumeMounts:
             - name: host-sys
               mountPath: /host-sys
-            - name: redis-config-volume
-              mountPath: /redis-configs
-            - name: redis-data
-              mountPath: /data
           command: ["/bin/sh", "-c"] 
-          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled; sed \"s/ADMINPASS/$ADMINPASS/g\" /redis-configs/redis.conf > /data/redis.conf"]
+          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
+      containers:
+        - name: {{ .Chart.Name }}-master
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          command: ["/bin/sh"]
+          args: ["/redis-configs/start-master.sh"]
           env:
           - name: ADMINPASS
             valueFrom:
               secretKeyRef:
                 name: {{ .Release.Name }}
                 key: password
-      containers:
-        - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
-          args: ["/data/redis.conf"]
+          - name: MY_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
           volumeMounts:
           - name: redis-config-volume
             mountPath: /redis-configs
@@ -63,18 +64,40 @@ spec:
               port: redis
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-        {{ if .Values.prometheus.enabled }}
-        - name: {{ .Chart.Name }}-exporter
+        - name: {{ .Chart.Name }}-sentinel
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          command: ["/bin/sh"]
+          args: ["/redis-configs/start-sentinel.sh"]
+          env:
+          - name: ADMINPASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}
+                key: password
+          - name: MY_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          volumeMounts:
+          - name: redis-config-volume
+            mountPath: /redis-configs
+          - name: redis-data
+            mountPath: /data
           ports:
-            - name: prometheus
-              containerPort: 9121
+            - name: sentinel
+              containerPort: {{ .Values.redis.config.sentinelPort }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: sentinel
+          readinessProbe:
+            tcpSocket:
+              port: sentinel
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-        {{ end }}
       volumes:
         - name: redis-config-volume
           configMap:

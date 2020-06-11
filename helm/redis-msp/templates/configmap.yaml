@@ -36,15 +36,14 @@ data:
 
   sentinel.conf: |-
     {{- with .Values.redis.config }}
-    port {{ .port | quote }}
+    port {{ .sentinelPort | quote }}
     dir {{ .dir | quote }}
     {{ end }}
-    sentinel monitor {{ .Release.Name }} {{ include "redis-msp.fullname" . }}-master-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }} 2
-    sentinel down-after-milliseconds {{ .Release.Name }} 10
+    bind 0.0.0.0
+    sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }} 2
+    sentinel down-after-milliseconds {{ .Release.Name }} 5000
     sentinel parallel-syncs {{ .Release.Name }} 1
     sentinel failover-timeout {{ .Release.Name }} 10000
-    sentinel announce-ip {{ include "redis-msp.fullname" . }}-sentinel-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
-    sentinel announce-port {{ .Values.redis.config.sentinelPort }}
     sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-cluster
     
   start-master.sh: |
@@ -52,18 +51,18 @@ data:
     sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
     
     # Start redis-server
-    redis-server /data/redis.conf --slave-announce-ip {{ include "redis-msp.fullname" . }}-master-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+    redis-server /data/redis.conf --slave-announce-ip $MY_IP
 
   start-slave.sh: |
     # Update redis.conf with current password
     sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
     
     # Start redis-server
-    redis-server /data/redis.conf --slave-announce-ip {{ include "redis-msp.fullname" . }}-slave-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} --slaveof {{ include "redis-msp.fullname" . }}-master-0.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }}
+    redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }}
 
   start-sentinel.sh: |
     # Copy over sentinel.conf
-    cp /redis-configs/sentinel.conf /data/sentinel.conf
+    sed "s/MY_IP/$MY_IP/g" /redis-configs/sentinel.conf > /data/sentinel.conf
     
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
