@@ -56,6 +56,9 @@ redis:
     replDisklessSync: "yes"
     replTimeout: 360
     replBacklogSize: 100mb
+  startup:
+    healthCheckCount: 20
+    sleepTime: 5
 sentinel: 
   image:
     registry: docker.io
@@ -71,10 +74,10 @@ sentinel:
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
   config:
     port: 26379
@@ -93,10 +96,10 @@ proxy:
     port: 6379
   resources:
     limits:
-      cpu: 10m
+      cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 10m
+      cpu: 100m
       memory: 128Mi
 prometheus:
   enabled: true
