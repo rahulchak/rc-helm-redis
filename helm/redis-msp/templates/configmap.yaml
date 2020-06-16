@@ -91,13 +91,67 @@ data:
     sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
+    count=0
+    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
+    do
+        # attempt to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+        getent_stdout=$(getent hosts {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }})
+    
+        # Check if getent output has NXDOMAIN, or if the output is empty
+        if [ "$(echo $getent_stdout | grep -c NXDOMAIN)" -ge "1" ] || [ "$getent_stdout" = "" ]
+        then
+            count=$(( count + 1 ))
+            echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, retrying in 5 seconds..."
+            sleep {{ .Values.redis.startup.sleepTime }}
+        else
+            MASTER_IP=$(echo "$getent_stdout" | tail -1 | awk '{print $1}')
+            break
+        fi
+    done
+    
+    # Fail if master ip was not resolved
+    if [ -z "$MASTER_IP" ]
+    then
+        echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, exiting"
+        exit 1
+    else
+        echo "Resolved {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} to: $MASTER_IP"
+    fi
+
     # Start redis-server
-    redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }}
+    redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $MASTER_IP {{ .Values.redis.service.port }}
 
   start-master-sentinel.sh: |
     # Copy over sentinel.conf
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
+
+    count=0
+    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
+    do
+        # attempt to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+        getent_stdout=$(getent hosts {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }})
+    
+        # Check if getent output has NXDOMAIN, or if the output is empty
+        if [ "$(echo $getent_stdout | grep -c NXDOMAIN)" -ge "1" ] || [ "$getent_stdout" = "" ]
+        then
+            count=$(( count + 1 ))
+            echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, retrying in 5 seconds..."
+            sleep {{ .Values.redis.startup.sleepCount }}
+        else
+            MASTER_IP=$(echo "$getent_stdout" | tail -1 | awk '{print $1}')
+            break
+        fi
+    done
+    
+    # Fail if master ip was not resolved
+    if [ -z "$MASTER_IP" ]
+    then
+        echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, exiting"
+        exit 1
+    else
+        echo "Resolved {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} to: $MASTER_IP"
+    fi
 
     existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h {{ .Release.Name }} -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
@@ -111,5 +165,63 @@ data:
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
+    count=0
+    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
+    do
+        # attempt to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+        getent_stdout=$(getent hosts {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }})
+    
+        # Check if getent output has NXDOMAIN, or if the output is empty
+        if [ "$(echo $getent_stdout | grep -c NXDOMAIN)" -ge "1" ] || [ "$getent_stdout" = "" ]
+        then
+            count=$(( count + 1 ))
+            echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, retrying in 5 seconds..."
+            sleep {{ .Values.redis.startup.sleepTime }}
+        else
+            MASTER_IP=$(echo "$getent_stdout" | tail -1 | awk '{print $1}')
+            break
+        fi
+    done
+    
+    # Fail if master ip was not resolved
+    if [ -z "$MASTER_IP" ]
+    then
+        echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, exiting"
+        exit 1
+    else
+        echo "Resolved {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} to: $MASTER_IP"
+    fi
+
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
+
+  start-proxy.sh: |
+    count=0
+    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
+    do
+        # test ping response of sentinel
+        sentinel_ping=$(timeout -s9 1 redis-cli -p 26379 ping)
+    
+        # Check if getent output has NXDOMAIN, or if the output is empty
+        if [ "$sentinel_ping" = "" ]
+        then
+            count=$(( count + 1 ))
+            echo "Failed to get ping response from 127.0.0.1:26379, sleeping 5"
+            sleep {{ .Values.redis.startup.sleepTime }}
+        else
+            PING_RESPONSE="true"
+            break
+        fi
+    done
+    
+    # Fail if sentinel never responded
+    if [ -z "$PING_RESPONSE" ]
+    then
+        echo "Failed to ping sentinel, exiting"
+        exit 1
+    else
+        echo "Got PING from sentinel"
+    fi
+
+    # Start redis-rust-proxy
+    /app/bin/redis-rust-proxy --master {{ .Release.Name }} --sentinel localhost:26379 --listen 0.0.0.0:6379

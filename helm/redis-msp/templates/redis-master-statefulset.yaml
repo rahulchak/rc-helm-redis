@@ -27,7 +27,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
-          command: ["/bin/sh"]
+          command: ["/bin/bash"]
           args: ["/redis-configs/start-master.sh"]
           env:
           - name: ADMINPASS
@@ -56,6 +56,8 @@ spec:
           readinessProbe:
             tcpSocket:
               port: redis
+            initialDelaySeconds: 10
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         - name: sentinel
@@ -63,7 +65,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.sentinel.image.pullPolicy }}
-          command: ["/bin/sh"]
+          command: ["/bin/bash"]
           args: ["/redis-configs/start-master-sentinel.sh"]
           env:
           - name: ADMINPASS
@@ -90,6 +92,8 @@ spec:
           readinessProbe:
             tcpSocket:
               port: sentinel
+            initialDelaySeconds: 10
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         - name: proxy
@@ -97,7 +101,11 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
           imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
-          args: ["--master","{{ .Release.Name }}","--sentinel","localhost:26379","--listen","0.0.0.0:6379"]
+          command: ["/bin/bash"]
+          args: ["/redis-configs/start-proxy.sh"]
+          volumeMounts:
+          - name: redis-config-volume
+            mountPath: /redis-configs
           ports:
             - name: proxy
               containerPort: {{ .Values.proxy.service.port }}
@@ -108,6 +116,8 @@ spec:
           readinessProbe:
             tcpSocket:
               port: proxy
+            initialDelaySeconds: 10
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
       volumes:
