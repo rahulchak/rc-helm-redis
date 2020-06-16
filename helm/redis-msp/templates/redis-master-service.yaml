@@ -34,5 +34,9 @@ spec:
       targetPort: sentinel
       protocol: TCP
       name: sentinel
+    - port: {{ .Values.proxy.service.port }}
+      targetPort: proxy
+      protocol: TCP
+      name: proxy
   selector:
     {{- include "redis-msp.selectorLabels" . | nindent 4 }}

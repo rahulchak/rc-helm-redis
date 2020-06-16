@@ -38,6 +38,12 @@ data:
     {{ end }}
 
   sentinel.conf: |-
+    bind 0.0.0.0
+    sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.config.port }} 2
+    sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-sentinel
+    sentinel auth-pass {{ .Release.Name }}  *
+    sentinel announce-ip MY_IP
+    sentinel announce-port {{ .Values.sentinel.config.port }}
     {{- with .Values.sentinel.config }}
     port {{ .port | quote }}
     dir {{ .dir | quote }}
@@ -45,12 +51,6 @@ data:
     sentinel parallel-syncs {{ $.Release.Name }} {{ .parallelSyncs }}
     sentinel failover-timeout {{ $.Release.Name }} {{ .failoverTimeout }}
     {{ end }}
-    bind 0.0.0.0
-    sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.sentinel.config.port }} 2
-    sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-sentinel
-    sentinel auth-pass {{ .Release.Name }}  *
-    sentinel announce-ip MY_IP
-    sentinel announce-port {{ .Values.sentinel.config.port }}
 
   parse_sentinels.awk: |-
     /ip/ {FOUND_IP=1}
@@ -99,7 +99,7 @@ data:
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
-    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h {{ .Release.Name }} -p {{ .Values.redis.config.sentinelPort }} SENTINEL sentinels {{ .Release.Name }})
+    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h {{ .Release.Name }} -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
     

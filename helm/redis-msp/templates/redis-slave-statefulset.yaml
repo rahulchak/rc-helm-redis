@@ -93,6 +93,24 @@ spec:
               port: sentinel
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+        - name: proxy
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+          imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
+          args: ["--master","{{ .Release.Name }}","--sentinel","localhost:26379","--listen","0.0.0.0:6379"]
+          ports:
+            - name: proxy
+              containerPort: {{ .Values.proxy.service.port }}
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: proxy
+          readinessProbe:
+            tcpSocket:
+              port: proxy
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
       volumes:
         - name: redis-config-volume
           configMap:
