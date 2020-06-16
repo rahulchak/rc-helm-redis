@@ -33,10 +33,10 @@ redis:
   resources:
     limits:
       cpu: 100m
-      memory: 1024Mi
+      memory: 512Mi
     requests:
       cpu: 100m
-      memory: 1024Mi
+      memory: 512Mi
   statefulStorage: 2Gi
   users:
     producer: on ~* +@read +@write nopass
@@ -78,11 +78,11 @@ sentinel:
       memory: 128Mi
   config:
     port: 26379
-    dir: /tmp
+    dir: /data
     downAfterMilliseconds: 60000
     parallelSyncs: 1
     failoverTimeout: 18000
-rust-proxy:
+proxy:
   image:
     registry: docker.io
     repository: verticaleap/redis-rust-proxy
@@ -91,6 +91,13 @@ rust-proxy:
   service: 
     type: ClusterIP
     port: 6379
+  resources:
+    limits:
+      cpu: 10m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 128Mi
 prometheus:
   enabled: true
   image:
