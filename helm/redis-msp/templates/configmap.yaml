@@ -32,25 +32,25 @@ data:
     user {{ .Release.Name }}-admin on ~* allcommands >ADMINPASS
     user {{ .Release.Name }}-masteruser nopass +@admin on
     user {{ .Release.Name }}-sentinel nopass on +client +subscribe +publish +ping +info +multi +slaveof +config +client +exec
-    {{ range $key, $val := .Values.users -}}
+    {{ range $key, $val := .Values.redis.users -}}
     user {{ $.Release.Name }}-{{ $key }} {{ $val }}
     {{ end }}
     {{ end }}
 
   sentinel.conf: |-
-    {{- with .Values.redis.config }}
-    port {{ .sentinelPort | quote }}
+    {{- with .Values.sentinel.config }}
+    port {{ .port | quote }}
     dir {{ .dir | quote }}
+    sentinel down-after-milliseconds {{ $.Release.Name }} {{ .downAfterMilliseconds }}
+    sentinel parallel-syncs {{ $.Release.Name }} {{ .parallelSyncs }}
+    sentinel failover-timeout {{ $.Release.Name }} {{ .failoverTimeout }}
     {{ end }}
     bind 0.0.0.0
-    sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }} 2
-    sentinel down-after-milliseconds {{ .Release.Name }} 5000
-    sentinel parallel-syncs {{ .Release.Name }} 2
-    sentinel failover-timeout {{ .Release.Name }} 10000
+    sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.sentinel.config.port }} 2
     sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-sentinel
     sentinel auth-pass {{ .Release.Name }}  *
     sentinel announce-ip MY_IP
-    sentinel announce-port {{ .Values.redis.config.sentinelPort }}
+    sentinel announce-port {{ .Values.sentinel.config.port }}
 
   parse_sentinels.awk: |-
     /ip/ {FOUND_IP=1}
@@ -94,7 +94,7 @@ data:
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }}
 
-  start-sentinel.sh: |
+  start-master-sentinel.sh: |
     # Copy over sentinel.conf
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
@@ -103,5 +103,13 @@ data:
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
     
+    # Start redis-server
+    redis-server /data/sentinel.conf --sentinel
+
+  start-slave-sentinel.sh: |
+    # Copy over sentinel.conf
+    cp /redis-configs/sentinel.conf /data/sentinel.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
+
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel

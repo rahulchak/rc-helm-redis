@@ -62,9 +62,9 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.sentinel.image.pullPolicy }}
           command: ["/bin/sh"]
-          args: ["/redis-configs/start-sentinel.sh"]
+          args: ["/redis-configs/start-master-sentinel.sh"]
           env:
           - name: ADMINPASS
             valueFrom:
@@ -82,7 +82,7 @@ spec:
             mountPath: /data
           ports:
             - name: sentinel
-              containerPort: {{ .Values.redis.config.sentinelPort }}
+              containerPort: {{ .Values.sentinel.config.port }}
               protocol: TCP
           livenessProbe:
             tcpSocket:
@@ -120,4 +120,4 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 1Gi
+          storage: {{ .Values.redis.statefulStorage }}

@@ -16,7 +16,7 @@
   # Connect to your cache with the following commands:
   export ADMIN_PASS=$(echo $(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.password}") | base64 --decode)
   export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "redis-msp.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 6379:6379
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.redis.config.port }}:{{ .Values.redis.config.port }}
 
   # ..then run a docker container to connect:
   export ADMIN_PASS=$(echo $(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.password}") | base64 --decode)

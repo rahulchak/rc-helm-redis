@@ -14,13 +14,9 @@ metaLabels:
     value: redis-msp
   - name: team
     value: dds
-users:
-  producer: on ~* +@read +@write nopass
-  consumer: on ~* +@read nopass
 redis: 
   stateful: true
-  slaveCount: 3
-  sentinelCount: 3
+  slaveCount: 2
   image:
     registry: docker.io
     repository: redis
@@ -28,7 +24,7 @@ redis:
     tag: 6.0.4
   service:
     type: ClusterIP
-    port: 6379
+    port: 6378
     annotations:
       app.kubernetes.io/name: redis-msp
       app.kubernetes.io/instance: redis-msp
@@ -36,15 +32,17 @@ redis:
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
-      cpu: 50m
-      memory: 512Mi
+      cpu: 100m
+      memory: 1024Mi
     requests:
-      cpu: 50m
-      memory: 512Mi
-  storage: 2048Mi
+      cpu: 100m
+      memory: 1024Mi
+  statefulStorage: 2Gi
+  users:
+    producer: on ~* +@read +@write nopass
+    consumer: on ~* +@read nopass
   config:
-    port: 6379
-    sentinelPort: 26379
+    port: 6378
     maxmemory: 1024mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
@@ -58,6 +56,41 @@ redis:
     replDisklessSync: "yes"
     replTimeout: 360
     replBacklogSize: 100mb
+sentinel: 
+  image:
+    registry: docker.io
+    repository: redis
+    pullPolicy: IfNotPresent
+    tag: 6.0.4
+  service:
+    type: ClusterIP
+    annotations:
+      app.kubernetes.io/name: redis-msp
+      app.kubernetes.io/instance: redis-msp
+      app.kubernetes.io/version: 6.0.3
+      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+  resources:
+    limits:
+      cpu: 50m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  config:
+    port: 26379
+    dir: /tmp
+    downAfterMilliseconds: 60000
+    parallelSyncs: 1
+    failoverTimeout: 18000
+rust-proxy:
+  image:
+    registry: docker.io
+    repository: verticaleap/redis-rust-proxy
+    pullPolicy: IfNotPresent
+    tag: 0.0.2
+  service: 
+    type: ClusterIP
+    port: 6379
 prometheus:
   enabled: true
   image:

@@ -30,7 +30,7 @@ spec:
       targetPort: redis
       protocol: TCP
       name: redis
-    - port: {{ .Values.redis.config.sentinelPort }}
+    - port: {{ .Values.sentinel.config.port }}
       targetPort: sentinel
       protocol: TCP
       name: sentinel
