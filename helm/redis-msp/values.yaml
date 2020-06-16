@@ -1,4 +1,5 @@
 namespace: dev-dds
+clusterDomain: cluster.local
 environment: nonprod
 enableAvi: true
 nameOverride: ""
@@ -18,6 +19,8 @@ users:
   consumer: on ~* +@read nopass
 redis: 
   stateful: true
+  slaveCount: 3
+  sentinelCount: 3
   image:
     registry: docker.io
     repository: redis
@@ -33,14 +36,15 @@ redis:
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
-      cpu: 100m
-      memory: 1024Mi
+      cpu: 50m
+      memory: 512Mi
     requests:
-      cpu: 100m
-      memory: 1024Mi
+      cpu: 50m
+      memory: 512Mi
   storage: 2048Mi
   config:
     port: 6379
+    sentinelPort: 26379
     maxmemory: 1024mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
@@ -51,6 +55,9 @@ redis:
     noAppendfsyncOnRewrite: "no"
     autoAofRewriteMinSize: 256mb
     autoAofRewritePercentage: 100
+    replDisklessSync: "yes"
+    replTimeout: 360
+    replBacklogSize: 100mb
 prometheus:
   enabled: true
   image:

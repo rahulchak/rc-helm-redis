@@ -21,14 +21,6 @@ spec:
       serviceAccountName: {{ include "redis-msp.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-        - name: disable-thp
-          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
-          volumeMounts:
-            - name: host-sys
-              mountPath: /host-sys
-          command: ["/bin/sh", "-c"] 
-          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
         - name: {{ .Chart.Name }}-master
           securityContext:
@@ -52,6 +44,8 @@ spec:
             mountPath: /redis-configs
           - name: redis-data
             mountPath: /data
+          - name: host-sys
+            mountPath: /host-sys
           ports:
             - name: redis
               containerPort: {{ .Values.redis.service.port }}
@@ -84,7 +78,7 @@ spec:
           volumeMounts:
           - name: redis-config-volume
             mountPath: /redis-configs
-          - name: redis-data
+          - name: temp-data
             mountPath: /data
           ports:
             - name: sentinel
@@ -105,6 +99,8 @@ spec:
         - name: host-sys
           hostPath:
             path: /sys
+        - name: temp-data
+          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

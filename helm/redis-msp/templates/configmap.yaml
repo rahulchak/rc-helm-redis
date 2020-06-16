@@ -8,6 +8,7 @@ data:
   redis.conf: |- 
     {{- with .Values.redis.config }}
     port {{ .port | quote }}
+    slave-announce-ip MY_IP
     slave-announce-port {{ .port | quote }}
     maxmemory {{ .maxmemory | quote }}
     maxmemory-policy {{ .maxmemoryPolicy | quote }}
@@ -22,13 +23,15 @@ data:
     repl-diskless-sync {{ .replDisklessSync | quote }}
     repl-timeout {{ .replTimeout | quote }}
     repl-backlog-size {{ .replBacklogSize | quote }}
+    repl-ping-replica-period 3
     {{ end }}
     {{- if not .Values.backwardsCompatable -}}
-    masteruser {{ .Release.Name }}-cluster
+    masteruser {{ .Release.Name }}-masteruser
     masterauth ADMINPASS
     user default on -@all +info +ping nopass
     user {{ .Release.Name }}-admin on ~* allcommands >ADMINPASS
-    user {{ .Release.Name }}-cluster nopass +@admin on
+    user {{ .Release.Name }}-masteruser nopass +@admin on
+    user {{ .Release.Name }}-sentinel nopass on +client +subscribe +publish +ping +info +multi +slaveof +config +client +exec
     {{ range $key, $val := .Values.users -}}
     user {{ $.Release.Name }}-{{ $key }} {{ $val }}
     {{ end }}
@@ -42,27 +45,63 @@ data:
     bind 0.0.0.0
     sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }} 2
     sentinel down-after-milliseconds {{ .Release.Name }} 5000
-    sentinel parallel-syncs {{ .Release.Name }} 1
+    sentinel parallel-syncs {{ .Release.Name }} 2
     sentinel failover-timeout {{ .Release.Name }} 10000
-    sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-cluster
+    sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-sentinel
+    sentinel auth-pass {{ .Release.Name }}  *
+    sentinel announce-ip MY_IP
+    sentinel announce-port {{ .Values.redis.config.sentinelPort }}
+
+  parse_sentinels.awk: |-
+    /ip/ {FOUND_IP=1}
+    /port/ {FOUND_PORT=1}
+    /runid/ {FOUND_RUNID=1}
+    !/ip|port|runid/ {
+      if (FOUND_IP==1) {
+        IP=$1; FOUND_IP=0;
+      }
+      else if (FOUND_PORT==1) {
+        PORT=$1;
+        FOUND_PORT=0;
+      } else if (FOUND_RUNID==1) {
+        printf "\nsentinel known-sentinel {{ .Release.Name }} %s %s %s", IP, PORT, $0; FOUND_RUNID=0;
+      }
+    }
     
   start-master.sh: |
+    echo never > /host-sys/kernel/mm/transparent_hugepage/enabled
+
     # Update redis.conf with current password
-    sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
-    
+    cp -f /redis-configs/redis.conf /data/redis.conf
+    sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
+
+    # Ensure that the master cache has a higher replica priority than the rest of the caches
+    echo >> /data/redis.conf
+    echo "replica-priority 50" >> /data/redis.conf
+
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP
 
   start-slave.sh: |
+    echo never > /host-sys/kernel/mm/transparent_hugepage/enabled
+
     # Update redis.conf with current password
-    sed "s/ADMINPASS/$ADMINPASS/g" /redis-configs/redis.conf > /data/redis.conf
-    
+    cp -f /redis-configs/redis.conf /data/redis.conf
+    sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
+
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.service.port }}
 
   start-sentinel.sh: |
     # Copy over sentinel.conf
-    sed "s/MY_IP/$MY_IP/g" /redis-configs/sentinel.conf > /data/sentinel.conf
+    cp /redis-configs/sentinel.conf /data/sentinel.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
+
+    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h {{ .Release.Name }} -p {{ .Values.redis.config.sentinelPort }} SENTINEL sentinels {{ .Release.Name }})
+    echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
+    echo
     
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel

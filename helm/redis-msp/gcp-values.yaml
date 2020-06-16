@@ -1,3 +1,4 @@
+namespace: default
 enableAvi: false
 redis:
   service:
