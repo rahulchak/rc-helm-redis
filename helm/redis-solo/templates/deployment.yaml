@@ -27,14 +27,14 @@ spec:
       serviceAccountName: {{ include "redis-solo.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-#      initContainers:
-#        - name: disable-thp
-#          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
-#          volumeMounts:
-#            - name: host-sys
-#              mountPath: /host-sys
-#          command: ["/bin/sh", "-c"] 
-#          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
+      initContainers:
+        - name: disable-thp
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: host-sys
+              mountPath: /host-sys
+          command: ["/bin/sh", "-c"] 
+          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
