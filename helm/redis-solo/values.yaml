@@ -54,8 +54,8 @@ redis:
 prometheus:
   enabled: true
   image:
-    registry: docker.io
-    repository: oliver006/redis_exporter
+    registry: ahregistry.chrobinson.com:5000
+    repository: ahregistry.chrobinson.com:5000/dds/redis_exporter
     pullPolicy: IfNotPresent
     tag: v0.21.1
   service:
