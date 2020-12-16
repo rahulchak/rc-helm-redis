@@ -19,8 +19,8 @@ users:
 redis: 
   stateful: true
   image:
-    registry: docker.io
-    repository: redis
+    registry: quay.io
+    repository: bitnami/redis
     pullPolicy: IfNotPresent
     tag: 6.0.4
   service:
