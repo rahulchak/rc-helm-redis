@@ -19,8 +19,8 @@ users:
 redis: 
   stateful: true
   image:
-    registry: quay.io
-    repository: bitnami/redis
+    registry: ahregistry.chrobinson.com:5000
+    repository: dds/redis
     pullPolicy: IfNotPresent
     tag: 6.0.4
   service:
