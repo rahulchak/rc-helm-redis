@@ -10,12 +10,8 @@ metadata:
     {{ if .Values.enableAvi }}
     avi_proxy: '{
                     "virtualservice":{
-                        "fqdn": "{{ .Release.Name }}.ordc_k8s_poc.dc1.poc.chr8s.io",
+                        "fqdn": "{{ .Release.Name }}.dc2.np.dds.chr8s.io",
                         "services":[{"port": {{ .Values.redis.service.port }}},{"port": {{ .Values.prometheus.service.port }}}]
-                    },
-                    "gslbservice":{
-                        "name": "{{ .Release.Name }}",
-                        "domain_names": ["{{ .Release.Name }}.poc.chr8s.io"]
                     }
     }'
     {{ end }}
