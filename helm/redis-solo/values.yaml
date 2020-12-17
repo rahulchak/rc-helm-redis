@@ -63,8 +63,8 @@ prometheus:
     port: 9121
   resources:
     limits:
-      cpu: 100m
-      memory: 1024Mi
+      cpu: 10m
+      memory: 128Mi
     requests:
       cpu: 10m
       memory: 128Mi
