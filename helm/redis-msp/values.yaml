@@ -88,9 +88,9 @@ sentinel:
 proxy:
   image:
     registry: docker.io
-    repository: verticaleap/redis-rust-proxy
+    repository: findelabs/redis-rust-proxy
     pullPolicy: IfNotPresent
-    tag: 0.0.2
+    tag: 0.2.9
   service: 
     type: ClusterIP
     port: 6379
