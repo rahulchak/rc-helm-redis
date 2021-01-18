@@ -38,7 +38,7 @@ redis:
     requests:
       cpu: 100m
       memory: 2048Mi
-  storage: 2048Mi
+  storage: 4096Mi
   config:
     port: 6379
     maxmemory: 3683mb
