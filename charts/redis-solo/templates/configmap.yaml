@@ -19,7 +19,7 @@ data:
     auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize | quote }}
     auto-aof-rewrite-percentage {{ .autoAofRewritePercentage | quote }}
     {{ end }}
-    {{- if not .Values.backwardsCompatable -}}
+    {{- if .Values.enableAuthentication -}}
     masteruser {{ .Release.Name }}-cluster
     user default on -@all +info +ping nopass
     user {{ .Release.Name }}-admin on ~* allcommands >ADMINPASS
