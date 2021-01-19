@@ -1,36 +1,4 @@
-namespace: redis-dev
-environment: nonprod
-enableAvi: true
-nameOverride: ""
-backwardsCompatable: false
-fullnameOverride: ""
-metaLabels:
-  - name: domain
-    value: dds
-  - name: app
-    value: redis
-  - name: task
-    value: redis-solo
-  - name: team
-    value: dds
-users:
-  producer: on ~* +@read +@write nopass
-  consumer: on ~* +@read nopass
 redis: 
-  stateful: true
-  image:
-    registry: ahregistry.chrobinson.com:5000
-    repository: ahregistry.chrobinson.com:5000/dds/redis
-    pullPolicy: IfNotPresent
-    tag: 6.0.4
-  service:
-    type: ClusterIP
-    port: 6379
-    annotations:
-      app.kubernetes.io/name: redis-solo
-      app.kubernetes.io/instance: redis-solo
-      app.kubernetes.io/version: 6.0.3
-      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
       cpu: 100m
@@ -40,42 +8,4 @@ redis:
       memory: 2048Mi
   storage: 4096Mi
   config:
-    port: 6379
     maxmemory: 3683mb
-    maxmemoryPolicy: allkeys-lru
-    dir: /data
-    appendonly: "yes"
-    appendfsync: everysec
-    replDisklessSync: "yes"
-    hz: 50
-    noAppendfsyncOnRewrite: "no"
-    autoAofRewriteMinSize: 256mb
-    autoAofRewritePercentage: 100
-prometheus:
-  enabled: true
-  image:
-    registry: ahregistry.chrobinson.com:5000
-    repository: ahregistry.chrobinson.com:5000/dds/redis_exporter
-    pullPolicy: IfNotPresent
-    tag: v0.21.1
-  service:
-    type: ClusterIP
-    port: 9121
-  resources:
-    limits:
-      cpu: 10m
-      memory: 128Mi
-    requests:
-      cpu: 10m
-      memory: 128Mi
-serviceAccount:
-  create: true
-  name: ""
-  annotations: {}
-podAnnotations: {}
-podSecurityContext: {}
-securityContext: 
-  allowPrivilegeEscalation: false
-nodeSelector: {}
-tolerations: []
-affinity: {}
