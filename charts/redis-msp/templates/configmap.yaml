@@ -25,7 +25,7 @@ data:
     repl-backlog-size {{ .replBacklogSize | quote }}
     repl-ping-replica-period 3
     {{ end }}
-    {{- if not .Values.backwardsCompatable -}}
+    {{- if .Values.enableAuthentication -}}
     masteruser {{ .Release.Name }}-masteruser
     masterauth ADMINPASS
     user default on -@all +info +ping nopass

@@ -3,7 +3,7 @@ clusterDomain: cluster.local
 environment: nonprod
 enableAvi: true
 nameOverride: ""
-backwardsCompatable: false
+enableAuthentication: false
 fullnameOverride: ""
 metaLabels:
   - name: domain
