@@ -1,8 +1,8 @@
-namespace: dev-dds
+namespace: redis-dev
 environment: nonprod
 enableAvi: true
 nameOverride: ""
-backwardsCompatable: false
+enableAuthentication: false
 fullnameOverride: ""
 metaLabels:
   - name: domain
