@@ -33,15 +33,15 @@ redis:
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
-      cpu: 100m
+      cpu: 50m
       memory: 1024Mi
     requests:
-      cpu: 100m
+      cpu: 50m
       memory: 1024Mi
   storage: 2048Mi
   config:
     port: 6379
-    maxmemory: 1024mb
+    maxmemory: 950mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
     appendonly: "yes"
