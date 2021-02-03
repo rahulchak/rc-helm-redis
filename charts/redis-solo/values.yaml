@@ -33,7 +33,7 @@ redis:
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
-      cpu: 50m
+      cpu: 1000m
       memory: 1024Mi
     requests:
       cpu: 50m
@@ -63,11 +63,11 @@ prometheus:
     port: 9121
   resources:
     limits:
-      cpu: 10m
+      cpu: 1000m
       memory: 128Mi
     requests:
       cpu: 10m
-      memory: 128Mi
+      memory: 1280Mi
 serviceAccount:
   create: true
   name: ""
