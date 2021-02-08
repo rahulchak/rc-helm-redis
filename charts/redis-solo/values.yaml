@@ -64,10 +64,10 @@ prometheus:
   resources:
     limits:
       cpu: 100m
-      memory: 128Mi
+      memory: 64Mi
     requests:
       cpu: 10m
-      memory: 128Mi
+      memory: 64Mi
 serviceAccount:
   create: true
   name: ""
