@@ -1,11 +1,11 @@
 redis: 
   resources:
     limits:
-      cpu: 1000m
-      memory: 16000Mi
+      cpu: 100m
+      memory: 2048Mi
     requests:
       cpu: 100m
-      memory: 16000Mi
-  storage: 40960Mi
+      memory: 2048Mi
+  storage: 4096Mi
   config:
-    maxmemory: 17000mb
+    maxmemory: 3683mb
