@@ -72,7 +72,11 @@ serviceAccount:
   create: true
   name: ""
   annotations: {}
-podAnnotations: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/environment: ""
+  prometheus.io/technology: "redis"
+  prometheus.io/exporter: "redis-exporter"
 podSecurityContext: {}
 securityContext: 
   allowPrivilegeEscalation: false

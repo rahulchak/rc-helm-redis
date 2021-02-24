@@ -1,0 +1,5 @@
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/environment: "dev"
+  prometheus.io/technology: "redis"
+  prometheus.io/exporter: "redis-exporter"
