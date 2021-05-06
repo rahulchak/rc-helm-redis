@@ -1,0 +1,17 @@
+vault:
+  # K8s role that is declared in vault
+  role: "ebdc_dds_k8s_np"
+  # vault secret for environment variables
+  environment:
+  # vault secret for container arguments
+  arguments:
+  # This is required, as using vault env/secrets requires a script to be ran to inject new values
+  entrypoint:
+
+ingress:
+  enabled: true
+  domain: dc2.np.dds.chr8s.io
+  # Port that avi should expose on the VIP
+  aviPort: 6379
+  annotations: {}
+  tls: []
