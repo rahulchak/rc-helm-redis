@@ -1,0 +1,37 @@
+|
+  # This cache has been created with the following users:
+    admin: {{ .Release.Name }}-admin (@all)
+    producer: {{ .Release.Name }}-producer (@read @write)
+    monitor: {{ .Release.Name }}-monitor (+info +ping)
+
+  # The {{ .Release.Name }}-admin account is password protected, get the password by running:
+  export ADMIN_PASS=$(echo $(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.password}") | base64 --decode)
+
+{{- if contains "LoadBalancer" .Values.redis.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "redis-dds.fullname" . }}'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "redis-dds.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+{{- else if contains "ClusterIP" .Values.redis.service.type }}
+
+  # Connect to your cache with the following commands:
+  export ADMIN_PASS=$(echo $(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.password}") | base64 --decode)
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "redis-dds.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME {{ .Values.redis.config.port }}:{{ .Values.redis.config.port }}
+
+  # ..then run a docker container to connect:
+  export ADMIN_PASS=$(echo $(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.password}") | base64 --decode)
+  sudo docker run --network host -it redis /usr/local/bin/redis-cli --user {{ .Release.Name }}-admin --pass $ADMIN_PASS
+{{- end }}
+
+  # You can also connect to redis from within any of the redis containers:
+  export ADMIN_PASS=$(echo $(kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }} -o jsonpath="{.data.password}") | base64 --decode)
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "redis-dds.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl exec -it $POD_NAME -- redis-cli -p {{ .Values.redis.config.port }} --user {{ .Release.Name }}-admin --pass $ADMIN_PASS
+
+  # You can exec into your pod with the following command:
+  kubectl exec -it $POD_NAME -- /bin/bash
+
+  # You can also connect to the cache from within kubernetes with the following command:
+  kubectl run --namespace {{ .Release.Namespace }} {{ include "redis-dds.fullname" . }}-client --rm --tty -i --restart='Never' \
+  --image {{ .Values.image.repository }}:{{ .Values.image.tag }} -- /usr/local/bin/redis-cli -h {{ template "redis-dds.fullname" . }} --user {{ .Release.Name }}-admin --pass $ADMIN_PASS
+  
