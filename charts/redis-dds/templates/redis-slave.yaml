@@ -1,4 +1,4 @@
-{{ if eq (.Values.redis.slaveCount | int) 0 }}
+{{ if gt (.Values.redis.slaveCount | int) 0 }}
 apiVersion: apps/v1
 {{- if .Values.redis.stateful.enabled }}
 kind: StatefulSet

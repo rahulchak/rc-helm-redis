@@ -69,7 +69,7 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-        {{ if eq (.Values.redis.slaveCount | int) 0 }}
+        {{ if gt (.Values.redis.slaveCount | int) 0 }}
         - name: sentinel
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -101,7 +101,6 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-        {{- end }}
         - name: proxy
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -126,6 +125,7 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{- end }}
       volumes:
         {{ if not .Values.redis.stateful.enabled }}
         - name: redis-data
