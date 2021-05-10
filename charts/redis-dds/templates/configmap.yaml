@@ -117,16 +117,9 @@ data:
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
-    # Fail if master ip was not resolved
-    if [ -z "$MY_IP" ]
-    then
-        echo "Failed to resolve hostname -i"
-        exit 1
-    else
-        echo "Resolved our pod ip to: $MASTER_IP"
-    fi
+    HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
-    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h {{ .Release.Name }} -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $MY_IP -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
     
