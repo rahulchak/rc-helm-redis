@@ -110,9 +110,6 @@ data:
     redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $MASTER_IP {{ .Values.redis.service.port }}
 
   start-master-sentinel.sh: |
-    # Copy over sentinel.conf
-    cp /redis-configs/sentinel.conf /data/sentinel.conf
-    sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
@@ -157,8 +154,12 @@ data:
         echo
     fi
 
-    echo  "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" >> /data/sentinel.conf
+    echo  "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" > /data/sentinel.conf
     
+    # Copy over rest of sentinel.conf
+    cat /redis-configs/sentinel.conf >> /data/sentinel.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
+
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
 
