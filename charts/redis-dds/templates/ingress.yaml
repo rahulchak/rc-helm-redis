@@ -9,7 +9,11 @@ metadata:
     avi_proxy: '{
         "virtualservice":{
           "fqdn": "{{ .Release.Name }}.{{ .Values.ingress.domain }}",
+          {{ if gt (.Values.redis.slaveCount | int) 0 }}
           "services":[{"port": {{ .Values.redis.service.port }}}],
+          {{- else }}
+          "services":[{"port": {{ .Values.proxy.service.port }}}],
+          {{- end }}
           "application_profile_ref": "/api/applicationprofile?name=System-L4-Application",
           "network_profile_ref": "/api/networkprofile?name=System-TCP-Fast-Path",
           "http_policies": []

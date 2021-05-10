@@ -7,7 +7,11 @@ metadata:
 data:
   redis.conf: |- 
     {{- with .Values.redis.config }}
+    {{ if gt ($.Values.redis.slaveCount | int) 0 }}
+    port 6378
+    {{- else }}
     port {{ .port | quote }}
+    {{- end }}
     slave-announce-ip MY_IP
     slave-announce-port {{ .port | quote }}
     maxmemory {{ .maxmemory | quote }}

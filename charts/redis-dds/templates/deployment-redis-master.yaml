@@ -1,4 +1,3 @@
-{{ if gt (.Values.redis.slaveCount | int) 0 }}
 apiVersion: apps/v1
 {{- if .Values.redis.stateful.enabled }}
 kind: StatefulSet
@@ -6,7 +5,7 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: {{ include "redis-dds.fullname" . }}-slave
+  name: {{ include "redis-dds.fullname" . }}-master
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
@@ -16,7 +15,6 @@ spec:
   {{- if .Values.redis.stateful.enabled }}
   serviceName: {{ include "redis-dds.fullname" }}-headless
   {{- end }}
-  replicas: {{ .Values.redis.slaveCount }}
   template:
     metadata:
     {{- with .Values.podAnnotations }}
@@ -29,14 +27,22 @@ spec:
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: disable-thp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: host-sys
+              mountPath: /host-sys
+          command: ["/bin/sh", "-c"]
+          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
-        - name: slave
+        - name: master
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/bash"]
-          args: ["/redis-configs/start-slave.sh"]
+          args: ["/redis-configs/start-master.sh"]
           env:
           - name: MY_IP
             valueFrom:
@@ -51,11 +57,7 @@ spec:
             mountPath: /host-sys
           ports:
             - name: redis
-            {{ if gt (.Values.redis.slaveCount | int) 0 }}
               containerPort: 6378
-            {{- else }}
-              containerPort: {{ .Values.redis.service.port }}
-            {{- end }}
               protocol: TCP
           livenessProbe:
             tcpSocket:
@@ -67,13 +69,14 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{ if gt (.Values.redis.slaveCount | int) 0 }}
         - name: sentinel
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/bash"]
-          args: ["/redis-configs/start-slave-sentinel.sh"]
+          args: ["/redis-configs/start-master-sentinel.sh"]
           env:
           - name: MY_IP
             valueFrom:
@@ -122,6 +125,7 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+        {{- end }}
       volumes:
         {{ if not .Values.redis.stateful.enabled }}
         - name: redis-data
@@ -157,4 +161,3 @@ spec:
         requests:
           storage: {{ .Values.redis.stateful.storage }}
   {{- end }}
-{{- end }}
