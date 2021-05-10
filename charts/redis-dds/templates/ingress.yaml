@@ -11,7 +11,7 @@ metadata:
           "fqdn": "{{ .Release.Name }}.{{ .Values.ingress.domain }}",
           "services":[{"port": 6379}],
           "application_profile_ref": "/api/applicationprofile?name=System-L4-Application",
-          "network_profile_ref": "/api/networkprofile?name=System-TCP-Fast-Path",
+          "network_profile_ref": "/api/networkprofile?name=System-TCP-Proxy",
           "http_policies": []
         }
     }'
