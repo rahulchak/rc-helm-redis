@@ -119,6 +119,18 @@ data:
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
+    while false
+    do
+        myip=$(hostname -i)
+        if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+            warn "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
+            sleep 5
+            return 1
+        fi
+        debug "$HEADLESS_SERVICE has my IP: ${myip}"
+        return 0
+    done
+
     existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $MY_IP -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
