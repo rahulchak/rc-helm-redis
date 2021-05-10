@@ -117,23 +117,7 @@ data:
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
-    count=0
-    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
-    do
-        # attempt to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
-        getent_stdout=$(getent hosts {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }})
-    
-        # Check if getent output has NXDOMAIN, or if the output is empty
-        if [ "$(echo $getent_stdout | grep -c NXDOMAIN)" -ge "1" ] || [ "$getent_stdout" = "" ]
-        then
-            count=$(( count + 1 ))
-            echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, retrying in 5 seconds..."
-            sleep {{ .Values.redis.startup.sleepCount }}
-        else
-            MASTER_IP=$(echo "$getent_stdout" | tail -1 | awk '{print $1}')
-            break
-        fi
-    done
+    MASTER_IP=$(hostname -i)"
     
     # Fail if master ip was not resolved
     if [ -z "$MASTER_IP" ]
