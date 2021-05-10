@@ -22,7 +22,7 @@ redis:
       app.kubernetes.io/version: 6.0.4
   resources:
     limits:
-      cpu: 100m
+      cpu: 500m
       memory: 1Gi
     requests:
       cpu: 100m
@@ -32,7 +32,7 @@ redis:
     consumer: on ~* +@read nopass
   config:
     port: 6379
-    maxmemory: 1024mb
+    maxmemory: 1000mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
     appendonly: "yes"

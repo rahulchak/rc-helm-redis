@@ -6,19 +6,11 @@ metadata:
     redis-version: "{{ .Release.version }}"
 data:
   redis.conf: |- 
-    {{- with .Values.redis.config }}
-    port 6378
+    {{- range $key, $val := .Values.redis.config }}
+    {{ $key | indent 4 }} {{ $val | quote }}
+    {{ end }}
     slave-announce-ip MY_IP
-    slave-announce-port {{ .port | quote }}
-    maxmemory {{ .maxmemory | quote }}
-    maxmemory-policy {{ .maxmemoryPolicy | quote }}
-    dir {{ .dir | quote }}
-    repl-diskless-sync {{ .replDisklessSync | quote }}
-    repl-timeout {{ .replTimeout | quote }}
-    repl-backlog-size {{ .replBacklogSize | quote }}
     repl-ping-replica-period 3
-    repl-diskless-sync {{ .replDisklessSync | quote }}
-    hz {{ .hz | quote }}
     {{- if $.Values.redis.stateful.enabled }}
     appendonly {{ .appendonly | quote }}
     appendfsync {{ .appendfsync | quote }}
