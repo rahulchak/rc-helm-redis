@@ -124,7 +124,7 @@ data:
     do
         myip=$(hostname -i)
         if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
-            warn "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
+            echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
             export REDIS_REPLICATION_MODE="slave"
             count=$(( count + 1 ))
             sleep 5
@@ -133,6 +133,8 @@ data:
         export REDIS_REPLICATION_MODE="master"
         count=5
     done
+
+    echo "Mode: $REDIS_REPLICATION_MODE"
 
     if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
         REDIS_MASTER_HOST="$(hostname -i)"
