@@ -6,7 +6,7 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: {{ .Release.name }}-slave
+  name: {{ .Release.Name }}-slave
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
