@@ -34,7 +34,7 @@ data:
 
   sentinel.conf: |-
     bind 0.0.0.0
-    sentinel monitor {{ .Release.Name }} {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} {{ .Values.redis.config.port }} 2
+    sentinel monitor {{ .Release.Name }} MY_IP {{ .Values.redis.config.port }} 2
     sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-sentinel
     sentinel auth-pass {{ .Release.Name }}  *
     sentinel announce-ip MY_IP
@@ -117,15 +117,13 @@ data:
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
-    MASTER_IP=$(hostname -i)
-    
     # Fail if master ip was not resolved
-    if [ -z "$MASTER_IP" ]
+    if [ -z "$MY_IP" ]
     then
-        echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, exiting"
+        echo "Failed to resolve hostname -i"
         exit 1
     else
-        echo "Resolved {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} to: $MASTER_IP"
+        echo "Resolved our pod ip to: $MASTER_IP"
     fi
 
     existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h {{ .Release.Name }} -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
