@@ -153,12 +153,11 @@ data:
             # master. We stop here to allow the container to not pass the liveness check and be restarted.
             exit 1
         fi
+        # Get existing sentinels 
+        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
+        echo
     fi
-
-    # Get existing sentinels 
-    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
-    echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
-    echo
 
     echo  "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" >> /data/sentinel.conf
     
