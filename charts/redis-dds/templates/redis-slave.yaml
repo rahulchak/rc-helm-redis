@@ -51,7 +51,11 @@ spec:
             mountPath: /host-sys
           ports:
             - name: redis
+            {{ if gt (.Values.redis.slaveCount | int) 0 }}
+              containerPort: 6378
+            {{- else }}
               containerPort: {{ .Values.redis.service.port }}
+            {{- end }}
               protocol: TCP
           livenessProbe:
             tcpSocket:

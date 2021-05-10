@@ -77,7 +77,6 @@ proxy:
     tag: 0.2.9
   service: 
     type: ClusterIP
-    port: 6379
   resources:
     limits:
       cpu: 100m
