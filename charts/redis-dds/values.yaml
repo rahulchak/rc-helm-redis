@@ -25,7 +25,7 @@ redis:
       cpu: 500m
       memory: 1Gi
     requests:
-      cpu: 100m
+      cpu: 500m
       memory: 1Gi
   users:
     producer: on ~* +@read +@write nopass
@@ -61,7 +61,7 @@ sentinel:
       cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 100m
+      cpu: 50m
       memory: 128Mi
   config:
     port: 26379
@@ -80,7 +80,7 @@ proxy:
     port: 6378
   resources:
     limits:
-      cpu: 100m
+      cpu: 200m
       memory: 128Mi
     requests:
       cpu: 100m
