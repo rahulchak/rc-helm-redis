@@ -109,7 +109,7 @@ data:
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $MASTER_IP {{ .Values.redis.service.port }}
 
-  start-master-sentinel.sh: |
+  start-sentinel.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
@@ -161,42 +161,10 @@ data:
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
     # Debug output
+    echo
+    echo "/data/sentinel.conf:"
     cat /data/sentinel.conf
-
-    # Start redis-server
-    redis-server /data/sentinel.conf --sentinel
-
-  start-slave-sentinel.sh: |
-    # Copy over sentinel.conf
-    cp /redis-configs/sentinel.conf /data/sentinel.conf
-    sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
-
-    count=0
-    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
-    do
-        # attempt to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
-        getent_stdout=$(getent hosts {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }})
-    
-        # Check if getent output has NXDOMAIN, or if the output is empty
-        if [ "$(echo $getent_stdout | grep -c NXDOMAIN)" -ge "1" ] || [ "$getent_stdout" = "" ]
-        then
-            count=$(( count + 1 ))
-            echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, retrying in 5 seconds..."
-            sleep {{ .Values.redis.startup.sleepTime }}
-        else
-            MASTER_IP=$(echo "$getent_stdout" | tail -1 | awk '{print $1}')
-            break
-        fi
-    done
-    
-    # Fail if master ip was not resolved
-    if [ -z "$MASTER_IP" ]
-    then
-        echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, exiting"
-        exit 1
-    else
-        echo "Resolved {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} to: $MASTER_IP"
-    fi
+    echo
 
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
