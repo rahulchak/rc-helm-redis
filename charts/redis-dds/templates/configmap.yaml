@@ -117,7 +117,7 @@ data:
     cp /redis-configs/sentinel.conf /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
-    MASTER_IP=$(hostname -i)"
+    MASTER_IP=$(hostname -i)
     
     # Fail if master ip was not resolved
     if [ -z "$MASTER_IP" ]
