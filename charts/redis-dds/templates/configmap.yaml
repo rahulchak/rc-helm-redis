@@ -34,7 +34,6 @@ data:
 
   sentinel.conf: |-
     bind 0.0.0.0
-    sentinel monitor {{ .Release.Name }} MY_IP {{ .Values.redis.config.port }} 2
     sentinel auth-user {{ .Release.Name }} {{ .Release.Name }}-sentinel
     sentinel auth-pass {{ .Release.Name }}  *
     sentinel announce-ip MY_IP
@@ -132,13 +131,8 @@ data:
         fi
         echo "$HEADLESS_SERVICE has my IP: ${myip}"
         export REDIS_REPLICATION_MODE="master"
-        count=$(( count + 1 ))
+        count=5
     done
-
-    # Get existing sentinels 
-    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
-    echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
-    echo
 
     if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
         REDIS_MASTER_HOST="$(hostname -i)"
@@ -159,7 +153,12 @@ data:
         fi
     fi
 
-    echo  "{{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" >> /data/sentinel.conf
+    # Get existing sentinels 
+    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+    echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
+    echo
+
+    echo  "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" >> /data/sentinel.conf
     
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
