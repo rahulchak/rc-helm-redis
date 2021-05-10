@@ -118,22 +118,48 @@ data:
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
-    while false
+    count=0
+    until [ "$count" = "5" ]
     do
         myip=$(hostname -i)
         if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             warn "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
+            export REDIS_REPLICATION_MODE="slave"
+            count=$(( count + 1 ))
             sleep 5
-            return 1
         fi
-        debug "$HEADLESS_SERVICE has my IP: ${myip}"
-        return 0
+        echo "$HEADLESS_SERVICE has my IP: ${myip}"
+        export REDIS_REPLICATION_MODE="master"
+        count=$(( count + 1 ))
     done
 
-    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $MY_IP -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+    # Get existing sentinels 
+    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
+
+    if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
+        REDIS_MASTER_HOST="$(hostname -i)"
+        REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
+    else
+
+        sentinel_info_command="redis-cli -h $REDIS_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+
+        REDIS_SENTINEL_INFO=($($sentinel_info_command))
+        REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+        REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+
+        if [[ ! ($($sentinel_info_command)) ]]; then
+            # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
+            # and are reporting the old one still. Once this happens the container will get stuck and never see the new
+            # master. We stop here to allow the container to not pass the liveness check and be restarted.
+            exit 1
+        fi
+    fi
+
+    echo  "{{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" >> /data/sentinel.conf
     
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
