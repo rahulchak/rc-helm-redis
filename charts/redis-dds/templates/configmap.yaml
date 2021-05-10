@@ -79,35 +79,8 @@ data:
     sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
-    count=0
-    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
-    do
-        # attempt to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
-        getent_stdout=$(getent hosts {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }})
-    
-        # Check if getent output has NXDOMAIN, or if the output is empty
-        if [ "$(echo $getent_stdout | grep -c NXDOMAIN)" -ge "1" ] || [ "$getent_stdout" = "" ]
-        then
-            count=$(( count + 1 ))
-            echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, retrying in 5 seconds..."
-            sleep {{ .Values.redis.startup.sleepTime }}
-        else
-            MASTER_IP=$(echo "$getent_stdout" | tail -1 | awk '{print $1}')
-            break
-        fi
-    done
-    
-    # Fail if master ip was not resolved
-    if [ -z "$MASTER_IP" ]
-    then
-        echo "Failed to resolve {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}, exiting"
-        exit 1
-    else
-        echo "Resolved {{ .Release.Name }}-master-0.{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }} to: $MASTER_IP"
-    fi
-
     # Start redis-server
-    redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $MASTER_IP {{ .Values.redis.service.port }}
+    redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER
 
   start-sentinel.sh: |
 
@@ -132,15 +105,15 @@ data:
     echo "Mode: $REDIS_REPLICATION_MODE"
 
     if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
-        REDIS_MASTER_HOST="$(hostname -i)"
-        REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
+        export REDIS_MASTER_HOST="$(hostname -i)"
+        export REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
     else
 
         sentinel_info_command="redis-cli -h $REDIS_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
 
-        REDIS_SENTINEL_INFO=($($sentinel_info_command))
-        REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
-        REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+        export REDIS_SENTINEL_INFO=($($sentinel_info_command))
+        export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+        export REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
 
         if [[ ! ($($sentinel_info_command)) ]]; then
             # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
