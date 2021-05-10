@@ -160,6 +160,9 @@ data:
     cat /redis-configs/sentinel.conf >> /data/sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
 
+    # Debug output
+    cat /data/sentinel.conf
+
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
 
