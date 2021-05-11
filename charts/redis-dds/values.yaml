@@ -51,6 +51,7 @@ redis:
 sentinel: 
   service:
     type: ClusterIP
+    port: 26379
     annotations:
       app.kubernetes.io/name: redis-msp
       app.kubernetes.io/instance: redis-msp
