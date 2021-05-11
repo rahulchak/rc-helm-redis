@@ -64,16 +64,22 @@ spec:
               containerPort: 6378
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
             exec:
               command:
                 - sh
                 - -c
                 - /redis-configs/readiness-script.sh 6378
           readinessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
             exec:
               command:
                 - sh
@@ -104,16 +110,22 @@ spec:
               containerPort: {{ .Values.sentinel.config.port }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
             exec:
               command:
                 - sh
                 - -c
                 - /redis-configs/readiness-script.sh 26379
           readinessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
             exec:
               command:
                 - sh
@@ -136,16 +148,22 @@ spec:
               containerPort: {{ .Values.proxy.service.port }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
             exec:
               command:
                 - sh
                 - -c
                 - /redis-configs/readiness-script.sh 6379
           readinessProbe:
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
             exec:
               command:
                 - sh
