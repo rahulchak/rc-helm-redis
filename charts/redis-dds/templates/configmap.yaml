@@ -82,6 +82,9 @@ data:
     while [ $continue == true ]
     do
         myip=$(hostname -i)
+        if [[ "$(getent ahosts "$HEADLESS_SERVICE"; echo $?)" == "1" ]]; then
+            echo "$HEADLESS_SERVICE does not exist, assuming I am the first master"
+            continue=false
         if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
             sleep 5
