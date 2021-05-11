@@ -5,7 +5,7 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: {{ .Release.Name }}-replica
+  name: {{ .Release.Name }}-replicas
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
@@ -37,7 +37,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
-        - name: master
+        - name: replica
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
