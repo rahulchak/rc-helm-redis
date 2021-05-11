@@ -66,13 +66,21 @@ spec:
               containerPort: 6378
               protocol: TCP
           livenessProbe:
-            tcpSocket:
-              port: redis
-          readinessProbe:
-            tcpSocket:
-              port: redis
             initialDelaySeconds: 10
             periodSeconds: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /redis-configs/readiness-script.sh 6378
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /redis-configs/readiness-script.sh 6378
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         {{ if gt (.Values.redis.replicas | int) 0 }}
@@ -98,13 +106,21 @@ spec:
               containerPort: {{ .Values.sentinel.config.port }}
               protocol: TCP
           livenessProbe:
-            tcpSocket:
-              port: sentinel
-          readinessProbe:
-            tcpSocket:
-              port: sentinel
             initialDelaySeconds: 10
             periodSeconds: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /redis-configs/readiness-script.sh 26379
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /redis-configs/readiness-script.sh 26379
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         - name: proxy
@@ -122,13 +138,21 @@ spec:
               containerPort: {{ .Values.proxy.service.port }}
               protocol: TCP
           livenessProbe:
-            tcpSocket:
-              port: proxy
-          readinessProbe:
-            tcpSocket:
-              port: proxy
             initialDelaySeconds: 10
             periodSeconds: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /redis-configs/readiness-script.sh 6379
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /redis-configs/readiness-script.sh 6379
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         {{- end }}

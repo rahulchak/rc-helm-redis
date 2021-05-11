@@ -83,7 +83,7 @@ data:
     do
         myip=$(hostname -i)
         if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
-            echo "$HEADLESS_SERVICE does not contain the IP (${myip}) of this pod, waiting"
+            echo "waiting until $HEADLESS_SERVICE contains my IP (${myip})..."
             sleep 5
         else
             echo "$HEADLESS_SERVICE contains my pod's IP (${myip}), continuing"
@@ -235,3 +235,11 @@ data:
 
     # Start redis-rust-proxy
     /app/bin/redis-rust-proxy --master {{ .Release.Name }} --sentinel localhost:26379 --listen 0.0.0.0:6379
+
+  readiness-script.sh: |
+    #!/bin/bash
+    response=$(timeout -s 3 10 redis-cli -h localhost -p $1 ping)
+    if [ "$response" != "PONG" ]; then
+      echo "$response"
+      exit 1
+    fi
