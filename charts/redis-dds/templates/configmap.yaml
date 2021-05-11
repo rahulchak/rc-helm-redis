@@ -79,6 +79,8 @@ data:
     sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
+    echo "Trying to connect to: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER""
+
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER
 
@@ -131,7 +133,7 @@ data:
         echo "Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
 
         # Get existing sentinels 
-        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
         echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
         echo
     fi
