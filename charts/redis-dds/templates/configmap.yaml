@@ -82,24 +82,21 @@ data:
     while [ $continue == true ]
     do
         myip=$(hostname -i)
-        if [[ "$(getent ahosts "$HEADLESS_SERVICE"; echo $?)" == "2" ]]; then
-            echo "$HEADLESS_SERVICE does not exist, assuming I am the first master"
-            continue=false
-        elif [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
-            echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
+        if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+            echo "$HEADLESS_SERVICE does not contain the IP (${myip}) of this pod, waiting"
             sleep 5
         else
-            echo "$HEADLESS_SERVICE has my IP, continuing: ${myip}"
+            echo "$HEADLESS_SERVICE contains my pod's IP (${myip}), continuing"
             continue=false
         fi
     done
 
     # If we are the only host listed in the headless service, assume we are the only container up and running
     if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
-        echo "$HEADLESS_SERVICE only contains my IP, assume I am a master pod"
+        echo "$HEADLESS_SERVICE is empty except for my pod's IP, assuming I am a master pod"
         export REDIS_REPLICATION_MODE="master"
     else
-        echo "$HEADLESS_SERVICE contains my IP, assuming I am a slave pod"
+        echo "$HEADLESS_SERVICE contains my IP, and others, assuming I am a slave pod"
         export REDIS_REPLICATION_MODE="slave"
     fi
 
@@ -147,10 +144,7 @@ data:
     while [ $continue == true ]
     do
         myip=$(hostname -i)
-        if [[ "$(getent ahosts "$HEADLESS_SERVICE"; echo $?)" == "2" ]]; then
-            echo "$HEADLESS_SERVICE does not exist, assuming I am the first master"
-            continue=false
-        elif [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+        if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
             sleep 5
         else
