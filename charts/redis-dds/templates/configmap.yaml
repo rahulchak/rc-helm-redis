@@ -120,8 +120,6 @@ data:
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
         export REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
 
-        echo "Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
-
         if [[ ! ($($sentinel_info_command)) ]]; then
             # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
             # and are reporting the old one still. Once this happens the container will get stuck and never see the new
@@ -129,6 +127,8 @@ data:
             echo "Could not find the master from the existing sentinels, exiting"
             exit 1
         fi
+
+        echo "Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
 
         # Get existing sentinels 
         existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $HEADLESS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})

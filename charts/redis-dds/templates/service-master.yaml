@@ -22,5 +22,9 @@ spec:
       targetPort: prometheus
       protocol: TCP
       name: prometheus
+    - port: {{ .Values.sentinel.service.port }}
+      targetPort: sentinel
+      protocol: TCP
+      name: sentinel
   selector:
     {{- include "redis-dds.selectorLabels" . | nindent 4 }}
