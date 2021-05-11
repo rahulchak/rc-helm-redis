@@ -126,7 +126,7 @@ data:
             # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
             # and are reporting the old one still. Once this happens the container will get stuck and never see the new
             # master. We stop here to allow the container to not pass the liveness check and be restarted.
-            echo "Could not find the master from the existing sentinels"
+            echo "Could not find the master from the existing sentinels, exiting"
             exit 1
         fi
 
