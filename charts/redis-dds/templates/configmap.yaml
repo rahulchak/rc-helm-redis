@@ -79,7 +79,7 @@ data:
     sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
-    echo "Trying to connect to: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER""
+    echo "Trying to connect to: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
 
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP --slaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER
