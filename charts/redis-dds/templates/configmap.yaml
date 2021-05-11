@@ -93,14 +93,19 @@ data:
         myip=$(hostname -i)
         if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
-            export REDIS_REPLICATION_MODE="slave"
             count=$(( count + 1 ))
             sleep 5
         fi
         echo "$HEADLESS_SERVICE has my IP: ${myip}"
-        export REDIS_REPLICATION_MODE="master"
         count=5
     done
+
+    # If we are the only host listed in the headless service, assume we are the only container up and running
+    if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
+        export REDIS_REPLICATION_MODE="master"
+    else
+        export REDIS_REPLICATION_MODE="slave"
+    fi
 
     echo "Mode: $REDIS_REPLICATION_MODE"
 
