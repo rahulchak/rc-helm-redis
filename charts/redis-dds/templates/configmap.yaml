@@ -73,7 +73,7 @@ data:
     # Start redis-server
     redis-server /data/redis.conf --slave-announce-ip $MY_IP
 
-  start-slave.sh: |
+  start-redis.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
@@ -99,6 +99,9 @@ data:
         echo "$HEADLESS_SERVICE contains my IP, assuming I am a slave pod"
         export REDIS_REPLICATION_MODE="slave"
     fi
+
+    # Copy over redis.conf
+    cp -f /redis-configs/redis.conf /data/redis.conf
 
     if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
         echo "Starting as master node"
@@ -126,7 +129,6 @@ data:
     fi
 
     # Update redis.conf with current password
-    cp -f /redis-configs/redis.conf /data/redis.conf
     sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 

@@ -5,7 +5,7 @@ kind: StatefulSet
 kind: Deployment
 {{- end }}
 metadata:
-  name: {{ .Release.Name }}-master
+  name: {{ .Release.Name }}-replica
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
@@ -15,6 +15,7 @@ spec:
   {{ if .Values.redis.stateful.enabled }}
   serviceName: {{ include "redis-dds.fullname" . }}-headless
   {{- end }}
+  replicas: {{ .Values.redis.replicas }}
   template:
     metadata:
     {{- with .Values.podAnnotations }}
@@ -42,7 +43,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/bash"]
-          args: ["/redis-configs/start-master.sh"]
+          args: ["/redis-configs/start-redis.sh"]
           env:
           - name: MY_IP
             valueFrom:
@@ -69,7 +70,7 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-        {{ if gt (.Values.redis.slaveCount | int) 0 }}
+        {{ if gt (.Values.redis.replicas | int) 0 }}
         - name: sentinel
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}

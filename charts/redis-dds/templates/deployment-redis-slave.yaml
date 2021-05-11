@@ -16,7 +16,7 @@ spec:
   {{- if .Values.redis.stateful.enabled }}
   serviceName: {{ include "redis-dds.fullname" }}-headless
   {{- end }}
-  replicas: {{ .Values.redis.slaveCount }}
+  replicas: 0
   template:
     metadata:
     {{- with .Values.podAnnotations }}
