@@ -82,7 +82,7 @@ data:
     while [ $continue == true ]
     do
         myip=$(hostname -i)
-        if [[ "$(getent ahosts "$HEADLESS_SERVICE"; echo $?)" == "1" ]]; then
+        if [[ "$(getent ahosts "$HEADLESS_SERVICE"; echo $?)" == "2" ]]; then
             echo "$HEADLESS_SERVICE does not exist, assuming I am the first master"
             continue=false
         elif [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
@@ -143,16 +143,19 @@ data:
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
-    while false
+    continue=true
+    while [ $continue == true ]
     do
         myip=$(hostname -i)
-        if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+        if [[ "$(getent ahosts "$HEADLESS_SERVICE"; echo $?)" == "2" ]]; then
+            echo "$HEADLESS_SERVICE does not exist, assuming I am the first master"
+            continue=false
+        elif [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
             sleep 5
-            return 1
         else
             echo "$HEADLESS_SERVICE has my IP, continuing: ${myip}"
-            return 0
+            continue=false
         fi
     done
 
