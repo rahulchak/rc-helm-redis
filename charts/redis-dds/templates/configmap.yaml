@@ -135,7 +135,7 @@ data:
     # show redis.conf
     echo
     echo "/data/redis.conf:"
-    cat /data/redis-conf
+    cat /data/redis.conf
     echo
 
     # Start redis-server
