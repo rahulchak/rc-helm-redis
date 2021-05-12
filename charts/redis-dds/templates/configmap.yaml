@@ -181,7 +181,8 @@ data:
     fi
 
     # Clean sentinels from the current sentinel nodes
-    for node in $( getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq ); do
+    for node in $( getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
+    do
         echo "Cleaning sentinels in sentinel node: $node"
             redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*"
         sleep 5
@@ -191,7 +192,7 @@ data:
     echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER 2" > /data/sentinel.conf
     
     # Get existing sentinels 
-    echo "Existing sentinels discovered:""
+    echo "Existing sentinels discovered:"
     existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
