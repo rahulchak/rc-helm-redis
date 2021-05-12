@@ -60,19 +60,6 @@ data:
       }
     }
     
-  start-master.sh: |
-    # Update redis.conf with current password
-    cp -f /redis-configs/redis.conf /data/redis.conf
-    sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
-    sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
-
-    # Ensure that the master cache has a higher replica priority than the rest of the caches
-    echo >> /data/redis.conf
-    echo "replica-priority 50" >> /data/redis.conf
-
-    # Start redis-server
-    redis-server /data/redis.conf --slave-announce-ip $MY_IP
-
   start-redis.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
