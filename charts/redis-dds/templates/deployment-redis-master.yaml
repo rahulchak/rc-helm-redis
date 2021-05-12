@@ -16,9 +16,14 @@ spec:
   serviceName: {{ include "redis-dds.fullname" . }}-headless
   {{- end }}
   replicas: {{ .Values.redis.replicas }}
+  {{- if .Values.redis.stateful.enabled }}
+  updateStrategy:
+    type: RollingUpdate
+  {{- else }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
+  {{- end }}
   template:
     metadata:
     {{- with .Values.podAnnotations }}
