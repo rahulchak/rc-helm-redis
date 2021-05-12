@@ -18,7 +18,7 @@ metadata:
 spec:
   backend:
     serviceName: {{ include "redis-dds.fullname" . }}
-    {{ if eq (.Values.redis.slaveCount | int) 0 }}
+    {{ if eq (.Values.redis.replicas | int) 0 }}
     servicePort: {{ .Values.redis.service.port }}
     {{- else }}
     servicePort: {{ .Values.proxy.service.port }}
