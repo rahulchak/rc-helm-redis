@@ -76,7 +76,7 @@ data:
   start-redis.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     continue=true
     while [ $continue == true ]
@@ -145,7 +145,7 @@ data:
   start-sentinel.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    REDIS_SERVICE="{{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     continue=true
     while [ $continue == true ]
