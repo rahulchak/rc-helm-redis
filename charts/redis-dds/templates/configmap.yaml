@@ -134,31 +134,36 @@ data:
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
+    echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
+    echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
+
     continue=true
     while [ $continue == true ]
     do
         myip=$(hostname -i)
         if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
-            echo "$HEADLESS_SERVICE does not contain the IP of this pod: ${myip}"
+            echo "INFO - headless service does not contain the IP of this pod: ${myip}"
             sleep 5
         else
-            echo "$HEADLESS_SERVICE has my IP, continuing: ${myip}"
+            echo "INFO - headless service contains my IP, continuing: ${myip}"
             continue=false
         fi
     done
 
     # If we are the only host listed in the headless service, assume we are the only container up and running
     if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
-        echo "$HEADLESS_SERVICE only contains my IP, assume I am a master pod"
+        echo "INFO - headless service only contains my IP, assuming I am a master pod"
         export REDIS_REPLICATION_MODE="master"
     else
-        echo "$HEADLESS_SERVICE contains my IP, assuming I am a slave pod"
+        echo "INFO - headless service contains my IP, and others, assuming I am a slave pod"
         export REDIS_REPLICATION_MODE="slave"
     fi
 
     if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
         export REDIS_MASTER_HOST="$(hostname -i)"
         export REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
+    
+        echo "INFO - I am the master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     else
 
         # Get current master
@@ -176,23 +181,23 @@ data:
             exit 1
         fi
 
-        echo "Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
-
+        echo "INFO - Discovered master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     fi
 
     # Clean sentinels from the current sentinel nodes
     for node in $( getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
     do
-        echo "Cleaning sentinels in sentinel node: $node"
-            redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*"
+        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
+        echo "INFO - Cleaned sentinel $node: $output"
         sleep 5
     done
-    echo "Sentinels clean up done"
+    echo "INFO - Sentinels cleanup done"
 
+    # Add current master to sentinel.conf
     echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER {{ add  (div .Values.redis.replicas 2) 1 }}" > /data/sentinel.conf
     
     # Get existing sentinels 
-    echo "Existing sentinels discovered:"
+    echo "INFO - Existing sentinels discovered:"
     existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
