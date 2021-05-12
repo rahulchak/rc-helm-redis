@@ -199,6 +199,7 @@ data:
     # Get existing sentinels 
     echo "INFO - Existing sentinels discovered:"
     existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+    echo "$existing_sentinels"
     echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf
     echo
 
