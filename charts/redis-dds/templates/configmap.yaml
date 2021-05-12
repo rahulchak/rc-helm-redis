@@ -210,7 +210,7 @@ data:
     fi
 
     # Copy over rest of sentinel.conf
-    cat /redis-configs/sentinel.conf > /data/sentinel.conf
+    cat /redis-configs/sentinel.conf >> /data/sentinel.conf
 
     # Set MY_IP in the sentinel.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
