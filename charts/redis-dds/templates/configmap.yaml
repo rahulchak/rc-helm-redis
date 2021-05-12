@@ -7,24 +7,24 @@ metadata:
 data:
   redis.conf: |- 
     {{- with .Values.redis.config }}
-    port 6378
+    port 6379
     slave-announce-ip MY_IP
-    slave-announce-port {{ .port | quote }}
-    maxmemory {{ .maxmemory | quote }}
-    maxmemory-policy {{ .maxmemoryPolicy | quote }}
-    dir {{ .dir | quote }}
-    repl-diskless-sync {{ .replDisklessSync | quote }}
-    repl-timeout {{ .replTimeout | quote }}
-    repl-backlog-size {{ .replBacklogSize | quote }}
+    slave-announce-port {{ .port }}
+    maxmemory {{ .maxmemory }}
+    maxmemory-policy {{ .maxmemoryPolicy }}
+    dir {{ .dir }}
+    repl-diskless-sync {{ .replDisklessSync }}
+    repl-timeout {{ .replTimeout }}
+    repl-backlog-size {{ .replBacklogSize }}
     repl-ping-replica-period 3
-    repl-diskless-sync {{ .replDisklessSync | quote }}
-    hz {{ .hz | quote }}
+    repl-diskless-sync {{ .replDisklessSync }}
+    hz {{ .hz }}
     {{- if $.Values.redis.stateful.enabled }}
-    appendonly {{ .appendonly | quote }}
-    appendfsync {{ .appendfsync | quote }}
-    no-appendfsync-on-rewrite {{ .noAppendfsyncOnRewrite | quote }}
-    auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize | quote }}
-    auto-aof-rewrite-percentage {{ .autoAofRewritePercentage | quote }}
+    appendonly {{ .appendonly }}
+    appendfsync {{ .appendfsync }}
+    no-appendfsync-on-rewrite {{ .noAppendfsyncOnRewrite }}
+    auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize }}
+    auto-aof-rewrite-percentage {{ .autoAofRewritePercentage }}
     {{- end }}
     {{- end }}
     {{- if .Values.enableAuthentication -}}
