@@ -132,6 +132,12 @@ data:
     sed -i "s/ADMINPASS/$ADMINPASS/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
+    # show redis.conf
+    echo
+    echo "/data/redis.conf:"
+    cat /data/redis-conf
+    echo
+
     # Start redis-server
     echo "Starting redis with: redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS"
     redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS
