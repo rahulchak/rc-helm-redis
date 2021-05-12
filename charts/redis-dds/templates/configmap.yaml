@@ -126,11 +126,9 @@ data:
     echo
     echo "/data/redis.conf:"
     cat /data/redis.conf
-    echo
-    echo
 
     # Start redis-server
-    echo "INFO - Starting redis with: redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS"
+    echo "\nINFO - Starting redis with: redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS\n"
     redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS
 
   start-sentinel.sh: |
