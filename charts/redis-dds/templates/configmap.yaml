@@ -133,6 +133,7 @@ data:
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
     # Start redis-server
+    echo "Starting redis with: redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS"
     redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS
 
   start-sentinel.sh: |
