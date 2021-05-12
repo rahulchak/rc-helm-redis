@@ -31,7 +31,7 @@ redis:
     producer: on ~* +@read +@write nopass
     consumer: on ~* +@read nopass
   config:
-    port: 6379
+    port: 6378
     maxmemory: 1000mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
@@ -78,7 +78,7 @@ proxy:
     tag: 0.2.9
   service: 
     type: ClusterIP
-    port: 6378
+    port: 6379
   resources:
     limits:
       cpu: 200m

@@ -7,7 +7,7 @@ metadata:
 data:
   redis.conf: |- 
     {{- with .Values.redis.config }}
-    port 6379
+    port {{ .port }}
     slave-announce-ip MY_IP
     slave-announce-port {{ .port }}
     maxmemory {{ .maxmemory }}
@@ -217,13 +217,13 @@ data:
     until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
     do
         # test ping response of sentinel
-        sentinel_ping=$(timeout -s9 1 redis-cli -p 26379 ping)
+        sentinel_ping=$(timeout -s9 1 redis-cli -p {{ .Values.sentinel.service.port }} ping)
     
         # Check if getent output has NXDOMAIN, or if the output is empty
         if [ "$sentinel_ping" = "" ]
         then
             count=$(( count + 1 ))
-            echo "Failed to get ping response from 127.0.0.1:26379, sleeping 5"
+            echo "Failed to get ping response from 127.0.0.1:{{ .Values.sentinel.service.port }}, sleeping 5"
             sleep {{ .Values.redis.startup.sleepTime }}
         else
             PING_RESPONSE="true"
@@ -241,7 +241,7 @@ data:
     fi
 
     # Start redis-rust-proxy
-    /app/bin/redis-rust-proxy --master {{ .Release.Name }} --sentinel localhost:26379 --listen 0.0.0.0:6379
+    /app/bin/redis-rust-proxy --master {{ .Release.Name }} --sentinel localhost:{{ .Values.sentinel.service.port }} --listen 0.0.0.0:{{ .Values.proxy.service.port }}
 
   readiness-script.sh: |
     #!/bin/bash
