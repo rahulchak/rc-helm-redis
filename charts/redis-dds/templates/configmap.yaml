@@ -189,7 +189,7 @@ data:
     done
     echo "Sentinels clean up done"
 
-    echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER {{ (div .Values.redis.replicas 2) + 1 }}" > /data/sentinel.conf
+    echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER {{ add  (div .Values.redis.replicas 2) 1 }}" > /data/sentinel.conf
     
     # Get existing sentinels 
     echo "Existing sentinels discovered:"
