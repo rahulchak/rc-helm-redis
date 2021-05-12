@@ -221,6 +221,7 @@ data:
     echo "INFO - /data/sentinel.conf:"
     cat /data/sentinel.conf
     echo 
+    echo
 
     # Start redis-server
     redis-server /data/sentinel.conf --sentinel
