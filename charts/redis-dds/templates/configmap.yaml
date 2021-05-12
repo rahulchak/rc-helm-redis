@@ -190,6 +190,12 @@ data:
         fi
 
         echo "INFO - Discovered master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
+
+        # Get existing sentinels 
+        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
+        echo "" >> /data/sentinel
+        echo "" >> /data/sentinel
     fi
 
     # Clean sentinels from the current sentinel nodes
@@ -200,12 +206,6 @@ data:
         sleep 5
     done
     echo "INFO - Sentinels cleanup done"
-
-    # Get existing sentinels 
-    existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
-    echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
-    echo "" >> /data/sentinel
-    echo "" >> /data/sentinel
 
     # Add current master to sentinel.conf
     echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER {{ add  (div .Values.redis.replicas 2) 1 }}" >> /data/sentinel.conf
