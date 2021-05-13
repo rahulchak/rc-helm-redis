@@ -16,6 +16,11 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+        prometheus.io/ddsscrape: "true"
+        prometheus.io/environment: "{{ .Values.environment }}"
+        prometheus.io/technology: "redis"
+        prometheus.io/exporter: "redis-exporter"
+        prometheus.io/port: "9121"
       labels:
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
     spec:
@@ -29,8 +34,10 @@ spec:
           image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env: 
-            REDIS_ALIAS: {{ .Release.name }}
-            REDIS_ADDR: {{ .Release.name }}.{{ .Values.ingress.domain }}
+            - name: REDIS_ALIAS
+              value: {{ .Release.name }}
+            - name: REDIS_ADDR
+              value: {{ .Release.name }}.{{ .Values.ingress.domain }}
           ports:
             - name: http
               containerPort: {{ .Values.prometheus.service.port }}

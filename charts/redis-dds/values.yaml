@@ -1,5 +1,6 @@
 clusterDomain: cluster.local
 enableAvi: true
+environment: dev
 nameOverride: ""
 enableAuthentication: false
 fullnameOverride: ""
