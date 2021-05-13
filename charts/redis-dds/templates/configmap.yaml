@@ -331,5 +331,3 @@ data:
     done
     echo "INFO - Master failover failed"
     exit 1
-
-{{- else }}
