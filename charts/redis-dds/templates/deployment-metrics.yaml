@@ -35,9 +35,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env: 
             - name: REDIS_ALIAS
-              value: {{ .Release.name }}
+              value: {{ .Release.Name }}
             - name: REDIS_ADDR
-              value: {{ .Release.name }}.{{ .Values.ingress.domain }}
+              value: {{ .Release.Name }}.{{ .Values.ingress.domain }}
           ports:
             - name: http
               containerPort: {{ .Values.prometheus.service.port }}
