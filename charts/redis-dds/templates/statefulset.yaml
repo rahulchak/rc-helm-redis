@@ -1,9 +1,5 @@
 apiVersion: apps/v1
-{{- if .Values.redis.stateful.enabled }}
 kind: StatefulSet
-{{- else }}
-kind: Deployment
-{{- end }}
 metadata:
   name: {{ .Release.Name }}-replicas
   labels:
@@ -12,18 +8,10 @@ spec:
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
-  {{ if .Values.redis.stateful.enabled }}
   serviceName: {{ include "redis-dds.fullname" . }}-headless
-  {{- end }}
   replicas: {{ .Values.redis.replicas }}
-  {{- if .Values.redis.stateful.enabled }}
   updateStrategy:
     type: RollingUpdate
-  {{- else }}
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-  {{- end }}
   template:
     metadata:
       annotations:
