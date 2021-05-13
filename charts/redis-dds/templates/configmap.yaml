@@ -260,12 +260,12 @@ data:
   readiness-script.sh: |
     #!/bin/bash
     response=$(timeout -s 3 10 redis-cli -h localhost -p $1 ping)
-    if [ "$response" != "PONG" ]; then
+    if [ "$response" != "PONG" ] || [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
       echo "$response"
       exit 1
     fi
 
-  prestop-sentinel.sh: |
+  prestop-sentinel.sh: |-
 
     run_sentinel_command() {
         redis-cli -h "$REDIS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
@@ -283,7 +283,8 @@ data:
     # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
     # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
 
-    if ! failover_finished; then
+    if ! failover_finished
+    then
         echo "INFO - I am the master pod and you are stopping me. Starting sentinel failover"
 
         # if I am the master, issue a command to failover once and then wait for the failover to finish
@@ -297,7 +298,7 @@ data:
             if failover_finished 
             then 
                 echo "INFO - Master has been successfully failed over to a different pod."
-                sleep 30
+                sleep 5
                 exit 0
             else
                 echo "INFO - Failover not yet complete, sleeping"
@@ -306,14 +307,16 @@ data:
             fi
         done
         echo "INFO - Master failover failed"
-        sleep 30
+        sleep 5
         exit 1
+    else
+        echo "INFO - I am not the master, exiting cleanly"
     fi
 
   prestop-redis.sh: |
 
     run_redis_command() {
-        redis-cli -h 127.0.0.1 -p ${REDIS_PORT} "$@"
+        redis-cli -h 127.0.0.1 -p {{ .Values.redis.service.port }} "$@"
     }
     failover_finished() {
         REDIS_ROLE=$(run_redis_command role | head -1)

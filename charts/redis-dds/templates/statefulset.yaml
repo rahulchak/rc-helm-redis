@@ -85,7 +85,7 @@ spec:
             preStop:
               exec:
                 command:
-                  - sh
+                  - bash
                   - -c
                   - /redis-configs/prestop-redis.sh
         {{ if gt (.Values.redis.replicas | int) 0 }}
@@ -138,7 +138,7 @@ spec:
             preStop:
               exec:
                 command:
-                  - sh
+                  - bash
                   - -c
                   - /redis-configs/prestop-sentinel.sh
         - name: proxy
