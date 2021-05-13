@@ -297,6 +297,7 @@ data:
             if failover_finished 
             then 
                 echo "INFO - Master has been successfully failed over to a different pod."
+                sleep 30
                 exit 0
             else
                 echo "INFO - Failover not yet complete, sleeping"
@@ -305,6 +306,7 @@ data:
             fi
         done
         echo "INFO - Master failover failed"
+        sleep 30
         exit 1
     fi
 
@@ -330,6 +332,7 @@ data:
         if failover_finished 
         then 
             echo "INFO - Master has been successfully failed over to a different pod."
+            sleep 30
             exit 0
         else
             echo "INFO - Failover not yet complete, sleeping"
@@ -338,4 +341,5 @@ data:
         fi
     done
     echo "INFO - Master failover failed"
+    sleep 30
     exit 1
