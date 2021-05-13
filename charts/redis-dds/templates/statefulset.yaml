@@ -65,7 +65,7 @@ spec:
             failureThreshold: 5
             exec:
               command:
-                - sh
+                - bash
                 - -c
                 - /redis-configs/readiness-script.sh 6378
           readinessProbe:
@@ -76,7 +76,7 @@ spec:
             failureThreshold: 5
             exec:
               command:
-                - sh
+                - bash
                 - -c
                 - /redis-configs/readiness-script.sh 6378
           resources:
@@ -118,7 +118,7 @@ spec:
             failureThreshold: 5
             exec:
               command:
-                - sh
+                - bash
                 - -c
                 - /redis-configs/readiness-script.sh 26379
           readinessProbe:
@@ -129,7 +129,7 @@ spec:
             failureThreshold: 5
             exec:
               command:
-                - sh
+                - bash
                 - -c
                 - /redis-configs/readiness-script.sh 26379
           resources:
@@ -163,7 +163,7 @@ spec:
             failureThreshold: 5
             exec:
               command:
-                - sh
+                - bash
                 - -c
                 - /redis-configs/readiness-script.sh 6379
           readinessProbe:
@@ -174,7 +174,7 @@ spec:
             failureThreshold: 5
             exec:
               command:
-                - sh
+                - bash
                 - -c
                 - /redis-configs/readiness-script.sh 6379
           resources:
