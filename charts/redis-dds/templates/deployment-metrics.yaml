@@ -37,7 +37,7 @@ spec:
             - name: REDIS_ALIAS
               value: {{ .Release.Name }}
             - name: REDIS_ADDR
-              value: {{ .Release.Name }}.{{ .Values.ingress.domain }}
+              value: {{ .Release.Name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
           ports:
             - name: http
               containerPort: {{ .Values.prometheus.service.port }}
