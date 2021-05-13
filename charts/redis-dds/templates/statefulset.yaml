@@ -87,7 +87,7 @@ spec:
                 command:
                   - sh
                   - -c
-                  - /configs/prestop-redis.sh
+                  - /redis-configs/prestop-redis.sh
         {{ if gt (.Values.redis.replicas | int) 0 }}
         - name: sentinel
           securityContext:
@@ -140,7 +140,7 @@ spec:
                 command:
                   - sh
                   - -c
-                  - /configs/prestop-sentinel.sh
+                  - /redis-configs/prestop-sentinel.sh
         - name: proxy
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}

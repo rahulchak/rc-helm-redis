@@ -343,3 +343,4 @@ data:
     echo "INFO - Master failover failed"
     sleep 30
     exit 1
+
