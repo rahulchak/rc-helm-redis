@@ -18,6 +18,10 @@ spec:
       targetPort: redis
       protocol: TCP
       name: redis
+    - port: {{ .Values.proxy.service.port }}
+      targetPort: proxy
+      protocol: TCP
+      name: proxy
     - port: {{ .Values.prometheus.service.port }}
       targetPort: prometheus
       protocol: TCP
