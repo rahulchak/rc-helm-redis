@@ -264,3 +264,72 @@ data:
       echo "$response"
       exit 1
     fi
+
+  prestop-sentinel.sh: |
+
+    run_sentinel_command() {
+        redis-cli -h "$REDIS_SERVICE" -p "{{ .Values.sentinel.service.sentinelPort }}" sentinel "$@"
+    }
+
+    failover_finished() {
+      REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name "{{ .Release.Name }}"))
+      REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+      [[ "$REDIS_MASTER_HOST" != "$(hostname -i)" ]]
+    }
+
+    REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+   
+    # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+    # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+    # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
+
+    if ! failover_finished; then
+        echo "INFO - I am the master pod and you are stopping me. Starting sentinel failover"
+
+        # if I am the master, issue a command to failover once and then wait for the failover to finish
+        run_sentinel_command failover "{{ .Release.Name }}"
+
+        while [ failover_finished != true ]
+        do
+            if failover_finished 
+            then 
+                echo "INFO - Master has been successfully failed over to a different pod."
+                exit 0
+            else
+                echo "INFO - Failover not yet complete, sleeping"
+                sleep 5
+            fi
+        done
+        echo "INFO - Master failover failed"
+        exit 1
+    fi
+
+  prestop-redis.sh: |
+
+    run_redis_command() {
+        redis-cli -h 127.0.0.1 -p ${REDIS_PORT} "$@"
+    }
+    failover_finished() {
+        REDIS_ROLE=$(run_redis_command role | head -1)
+        [[ "$REDIS_ROLE" != "master" ]]
+    }
+    
+    # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+    # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+    # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
+
+    while [ failover_finished != true ]
+    do
+        if failover_finished 
+        then 
+            echo "INFO - Master has been successfully failed over to a different pod."
+            exit 0
+        else
+            echo "INFO - Failover not yet complete, sleeping"
+            sleep 5
+        fi
+    done
+    echo "INFO - Master failover failed"
+    exit 1
+
+{{- else }}
