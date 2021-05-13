@@ -41,9 +41,9 @@ spec:
             - name: REDIS_EXPORTER_LOG_FORMAT
               value: json
             - name: REDIS_EXPORTER_INCL_SYSTEM_METRICS
-              value: true
+              value: "true"
             - name: REDIS_EXPORTER_PING_ON_CONNECT
-              value: true
+              value: "true"
           ports:
             - name: http
               containerPort: {{ .Values.prometheus.service.port }}
