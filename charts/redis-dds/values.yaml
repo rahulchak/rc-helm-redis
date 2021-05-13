@@ -75,7 +75,7 @@ proxy:
     registry: docker.io
     repository: findelabs/redis-rust-proxy
     pullPolicy: IfNotPresent
-    tag: 0.2.9
+    tag: 0.2.11
   service: 
     type: ClusterIP
     port: 6379
