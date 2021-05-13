@@ -93,6 +93,13 @@ spec:
                 - /redis-configs/readiness-script.sh 6378
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/bash
+                  - -c
+                  - /configs/prestop-redis.sh
         {{ if gt (.Values.redis.replicas | int) 0 }}
         - name: sentinel
           securityContext:
@@ -139,6 +146,13 @@ spec:
                 - /redis-configs/readiness-script.sh 26379
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/bash
+                  - -c
+                  - /configs/prestop-sentinel.sh
         - name: proxy
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
