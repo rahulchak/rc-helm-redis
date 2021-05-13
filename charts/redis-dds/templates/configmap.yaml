@@ -268,7 +268,7 @@ data:
   prestop-sentinel.sh: |
 
     run_sentinel_command() {
-        redis-cli -h "$REDIS_SERVICE" -p "{{ .Values.sentinel.service.sentinelPort }}" sentinel "$@"
+        redis-cli -h "$REDIS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
     }
 
     failover_finished() {
@@ -289,7 +289,10 @@ data:
         # if I am the master, issue a command to failover once and then wait for the failover to finish
         run_sentinel_command failover "{{ .Release.Name }}"
 
-        while [ failover_finished != true ]
+        echo "INFO - Waiting for failover to finish"
+    
+        count=0
+        until [ "$count" = "10" ]
         do
             if failover_finished 
             then 
@@ -297,6 +300,7 @@ data:
                 exit 0
             else
                 echo "INFO - Failover not yet complete, sleeping"
+                count=$(( count + 1 ))
                 sleep 5
             fi
         done
@@ -318,7 +322,10 @@ data:
     # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
     # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
 
-    while [ failover_finished != true ]
+    echo "INFO - Starting failover checks"
+
+    count=0
+    until [ "$count" = "10" ]
     do
         if failover_finished 
         then 
@@ -326,6 +333,7 @@ data:
             exit 0
         else
             echo "INFO - Failover not yet complete, sleeping"
+            count=$(( count + 1 ))
             sleep 5
         fi
     done
