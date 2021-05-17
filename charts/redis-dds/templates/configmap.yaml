@@ -27,7 +27,7 @@ data:
     auto-aof-rewrite-percentage {{ .autoAofRewritePercentage }}
     {{- end }}
     {{- end }}
-    {{- if .Values.authentication.enabled -}}
+    {{- if .Values.authentication.enabled }}
     requirepass REDISAUTH
     masterauth REDISAUTH
     {{ end }}
