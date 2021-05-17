@@ -28,13 +28,13 @@ redis:
   resources:
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
     requests:
       cpu: 500m
-      memory: 1Gi
+      memory: 2Gi
   config:
     port: 6378
-    maxmemory: 1000mb
+    maxmemory: 2000mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
     appendonly: "yes"
