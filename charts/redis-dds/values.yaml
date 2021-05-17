@@ -5,8 +5,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 authentication:
-  enabled: false
-  vault: 
+  enabled: true
+  vault: kv2/dds/development/redis/redis-dev-helmtest
 
 image:
   registry: docker.io
