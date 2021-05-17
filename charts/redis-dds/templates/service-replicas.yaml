@@ -18,17 +18,19 @@ spec:
       targetPort: redis
       protocol: TCP
       name: redis
-    - port: {{ .Values.proxy.service.port }}
-      targetPort: proxy
-      protocol: TCP
-      name: proxy
     - port: {{ .Values.prometheus.service.port }}
       targetPort: prometheus
       protocol: TCP
       name: prometheus
+{{ if gt (.Values.redis.replicas | int) 1 }}
+    - port: {{ .Values.proxy.service.port }}
+      targetPort: proxy
+      protocol: TCP
+      name: proxy
     - port: {{ .Values.sentinel.service.port }}
       targetPort: sentinel
       protocol: TCP
       name: sentinel
+{{- end }}
   selector:
     {{- include "redis-dds.selectorLabels" . | nindent 4 }}
