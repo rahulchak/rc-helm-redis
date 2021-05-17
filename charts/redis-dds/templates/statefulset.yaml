@@ -19,6 +19,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- include "generic.vaultAnnotations" . | nindent 8 }}
       labels:
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
     spec:
