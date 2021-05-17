@@ -61,3 +61,26 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Vault annotations
+*/}}
+{{- define "generic.vaultAnnotations" -}}
+{{- if .Values.authentication.enabled }}
+vault.hashicorp.com/agent-inject: "true"
+vault.hashicorp.com/tls-skip-verify: "true"
+vault.hashicorp.com/role: "{{ .Values.vault.role }}"
+{{- include "generic.vaultImportAnnotations" . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Vault annotations
+*/}}
+{{- define "generic.vaultImportAnnotations" -}}
+vault.hashicorp.com/agent-inject-secret-redisauth: "{{ .Values.authentication.vault }}"
+vault.hashicorp.com/agent-inject-template-redisauth: |
+  {{`{{- with secret `}}"{{ .Values.authentication.vault }}"{{` -}}`}}
+  {{`{{ .Data.data.password }}`}}
+  {{`{{- end }}`}}
+{{- end }}
