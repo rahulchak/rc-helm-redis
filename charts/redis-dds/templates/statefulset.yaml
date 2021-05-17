@@ -10,7 +10,6 @@ spec:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
   serviceName: {{ include "redis-dds.fullname" . }}-headless
   replicas: {{ .Values.redis.replicas }}
-  revisionHistoryLimit: 5
   updateStrategy:
     type: RollingUpdate
   template:
