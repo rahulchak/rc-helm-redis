@@ -88,7 +88,7 @@ spec:
                   - bash
                   - -c
                   - /redis-configs/prestop-redis.sh
-        {{ if gt (.Values.redis.replicas | int) 0 }}
+        {{ if gt (.Values.redis.replicas | int) 1 }}
         - name: sentinel
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
