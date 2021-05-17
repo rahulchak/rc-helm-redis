@@ -17,7 +17,7 @@ redis:
   stateful: 
     enabled: false
     storage: 3Gi
-  replicas: 1
+  replicas: 3
   service:
     type: ClusterIP
     port: 6378
