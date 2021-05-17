@@ -212,9 +212,9 @@ data:
     fi
 
     # Set the auth pass is authentication is enabled:
-    if [[ -f /vault/secret/redisauth ]];
+    if [[ -f /vault/secrets/redisauth ]];
     then
-        export REDISAUTH="$(< /vault/secret/redisauth)"
+        export REDISAUTH="$(< /vault/secrets/redisauth)"
         echo "sentinel auth-pass {{ .Release.Name }} ${REDISAUTH}" >> /data/sentinel.conf
     fi
 
@@ -266,11 +266,11 @@ data:
     /app/bin/redis-rust-proxy --master {{ .Release.Name }}\
       --sentinel localhost:{{ .Values.sentinel.service.port }}\
       --listen 0.0.0.0:{{ .Values.proxy.service.port }}\
-      {{- if .Values.authentication.enabled }} --password $(< /vault/secret/redisauth) {{- end }} 
+      {{- if .Values.authentication.enabled }} --password $(< /vault/secrets/redisauth) {{- end }} 
 
   readiness-script.sh: |
     #!/bin/bash
-    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secret/redisauth) {{- end }} -h localhost -p $1 ping)
+    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
     if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
       echo "$response"
       exit 1
@@ -327,7 +327,7 @@ data:
   prestop-redis.sh: |
 
     run_redis_command() {
-        redis-cli -h 127.0.0.1 {{- if .Values.authentication.enabled }} -a $(< /vault/secret/redisauth) {{- end }} -p {{ .Values.redis.service.port }} "$@"
+        redis-cli -h 127.0.0.1 {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -p {{ .Values.redis.service.port }} "$@"
     }
     failover_finished() {
         REDIS_ROLE=$(run_redis_command role | head -1)
