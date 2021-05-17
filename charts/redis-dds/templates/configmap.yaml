@@ -119,7 +119,7 @@ data:
     fi
 
     # Update redis.conf with current password
-    [[ -f /vault/secret/redisauth ]] && export REDISAUTH="$(< /vault/secret/redisauth)"
+    [[ -f /vault/secrets/redisauth ]] && export REDISAUTH="$(< /vault/secrets/redisauth)"
     sed -i "s/REDISAUTH/$REDISAUTH/g" /data/redis.conf
     sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
 
