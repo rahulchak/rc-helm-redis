@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
+  revisionHistoryLimit: 5
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
@@ -23,7 +24,6 @@ spec:
       labels:
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
     spec:
-      revisionHistoryLimit: 5
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
