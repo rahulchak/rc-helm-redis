@@ -309,7 +309,7 @@ data:
   prestop-sentinel.sh: |-
 
     run_sentinel_command() {
-        redis-cli -h "$REPLICAS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
+        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
     }
 
     failover_finished() {
@@ -318,7 +318,7 @@ data:
       [[ "$REDIS_MASTER_HOST" != "$(hostname -i)" ]]
     }
 
-    REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINELS_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
    
     # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
     # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
