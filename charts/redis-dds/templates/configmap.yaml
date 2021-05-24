@@ -263,17 +263,21 @@ data:
     redis-server /data/sentinel.conf --sentinel
 
   start-proxy.sh: |
+
+    SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
+
     count=0
     until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
     do
         # test ping response of sentinel
-        sentinel_ping=$(timeout -s9 1 redis-cli -p {{ .Values.sentinel.service.port }} ping)
+        sentinel_ping=$(timeout -s9 1 redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} ping)
     
         # Check if getent output has NXDOMAIN, or if the output is empty
         if [ "$sentinel_ping" = "" ]
         then
             count=$(( count + 1 ))
-            echo "Failed to get ping response from 127.0.0.1:{{ .Values.sentinel.service.port }}, sleeping 5"
+            echo "Failed to get ping response from $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}, sleeping 5"
             sleep {{ .Values.redis.startup.sleepTime }}
         else
             PING_RESPONSE="true"
