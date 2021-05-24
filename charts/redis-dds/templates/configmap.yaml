@@ -209,15 +209,15 @@ data:
         echo "INFO - Discovered master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     fi
 
-# Commenting out for now...
-#    # Clean sentinels from the current sentinel nodes
-#    for node in $( getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
-#    do
-#        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
-#        echo "INFO - Cleaned sentinel $node: $output"
-#        sleep 5
-#    done
-#    echo "INFO - Sentinels cleanup done"
+    # Commenting out for now...
+    #    # Clean sentinels from the current sentinel nodes
+    #    for node in $( getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
+    #    do
+    #        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
+    #        echo "INFO - Cleaned sentinel $node: $output"
+    #        sleep 5
+    #    done
+    #    echo "INFO - Sentinels cleanup done"
 
     # Add current master to sentinel.conf
     # This needs to be the first line in the file
