@@ -11,6 +11,7 @@ spec:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
   serviceName: {{ include "redis-dds.fullname" . }}-sentinels-headless
   replicas: {{ .Values.sentinel.replicas }}
+  revisionHistoryLimit: 3
   updateStrategy:
     type: RollingUpdate
   template:
