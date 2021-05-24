@@ -178,7 +178,7 @@ data:
         master="none"
         for replica in $replicas
         do
-            role=$(redis-cli -h $replica info replication 2>/dev/null | grep ^role | cut -d: -f 2)
+            role=$(redis-cli -h $replica -p {{ .Values.redis.service.port }} info replication 2>/dev/null | grep ^role | cut -d: -f 2)
             if [[ "$role" == "master" ]]
             then
                 echo "INFO - Found master at $replica"
@@ -277,7 +277,7 @@ data:
         if [ "$sentinel_ping" = "" ]
         then
             count=$(( count + 1 ))
-            echo "Failed to get ping response from $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}, sleeping 5"
+            echo "Failed to get redis ping response from $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}, sleeping 5"
             sleep {{ .Values.redis.startup.sleepTime }}
         else
             PING_RESPONSE="true"
