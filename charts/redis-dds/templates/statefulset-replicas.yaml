@@ -138,7 +138,7 @@ spec:
         {{ end }}
         - name: redis-config-volume
           configMap:
-            name: {{ include "redis-dds.fullname" . }}-redis-config
+            name: {{ include "redis-dds.fullname" . }}-replicas-config
             defaultMode: 0755
         - name: host-sys
           hostPath:

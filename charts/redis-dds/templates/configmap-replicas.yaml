@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "redis-dds.fullname" . }}-replicas-config
+  labels:
+    redis-version: "{{ .Release.version }}"
+data:
+  redis.conf: |- 
+    {{- with .Values.redis.config }}
+    port {{ .port }}
+    slave-announce-ip MY_IP
+    slave-announce-port {{ .port }}
+    maxmemory {{ .maxmemory }}
+    maxmemory-policy {{ .maxmemoryPolicy }}
+    dir {{ .dir }}
+    repl-diskless-sync {{ .replDisklessSync }}
+    repl-timeout {{ .replTimeout }}
+    repl-backlog-size {{ .replBacklogSize }}
+    repl-ping-replica-period 3
+    repl-diskless-sync {{ .replDisklessSync }}
+    hz {{ .hz }}
+    {{- if $.Values.redis.stateful.enabled }}
+    appendonly {{ .appendonly }}
+    appendfsync {{ .appendfsync }}
+    no-appendfsync-on-rewrite {{ .noAppendfsyncOnRewrite }}
+    auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize }}
+    auto-aof-rewrite-percentage {{ .autoAofRewritePercentage }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.authentication.enabled }}
+    requirepass REDISAUTH
+    masterauth REDISAUTH
+    {{ end }}
+    
+  start-redis.sh: |
+
+    REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+
+    echo "INFO - REPLICAS_HEADLESS_SERVICE: $REPLICAS_HEADLESS_SERVICE"
+    echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
+    echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
+
+    # Wait until headless service contains my IP
+    continue=true
+    while [ $continue == true ]
+    do
+        myip=$(hostname -i)
+        if [[ -z "$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+            echo "INFO - waiting until headless service contains my IP (${myip})..."
+            sleep 5
+        else
+            echo "INFO - headless service contains my pod's IP (${myip}), continuing"
+            continue=false
+        fi
+    done
+
+    # If we are the only host listed in the headless service, assume we are the only container up and running
+    if [[ -z "$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
+        echo "INFO - headless service is empty except for my pod's IP, assuming I am a master pod"
+        export REDIS_REPLICATION_MODE="master"
+    else
+        echo "INFO - headless service contains my IP, and others, assuming I am a slave pod"
+        export REDIS_REPLICATION_MODE="slave"
+    fi
+
+    # Copy over redis.conf
+    cp -f /redis-configs/redis.conf /data/redis.conf
+
+    if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
+        echo "INFO - Starting as master node"
+        ARGS=""
+    else
+        echo "INFO - Starting as a slave node"
+
+        # Get current master
+        sentinel_info_command="redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+
+        export REDIS_SENTINEL_INFO=($($sentinel_info_command))
+        export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+        export REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+
+        if [[ ! ($($sentinel_info_command)) ]]; then
+            # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
+            # and are reporting the old one still. Once this happens the container will get stuck and never see the new
+            # master. We stop here to allow the container to not pass the liveness check and be restarted.
+            echo "Could not find the master from the existing sentinels, exiting"
+            exit 1
+        fi
+
+        echo "INFO - Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
+        ARGS="--slaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER"
+    fi
+
+    # Update redis.conf with current password
+    [[ -f /vault/secrets/redisauth ]] && export REDISAUTH="$(< /vault/secrets/redisauth)"
+    sed -i "s/REDISAUTH/$REDISAUTH/g" /data/redis.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/redis.conf
+
+    # show redis.conf
+    echo
+    echo "INFO - /data/redis.conf:"
+    cat /data/redis.conf
+
+    # Start redis-server
+    echo
+    echo
+    echo "INFO - Starting redis with: redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS"
+    echo
+    redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS
+
+  start-proxy.sh: |
+
+    SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
+
+    count=0
+    until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
+    do
+        # test ping response of sentinel
+        sentinel_ping=$(timeout -s9 1 redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} ping)
+    
+        # Check if getent output has NXDOMAIN, or if the output is empty
+        if [ "$sentinel_ping" = "" ]
+        then
+            count=$(( count + 1 ))
+            echo "Failed to get redis ping response from $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}, sleeping 5"
+            sleep {{ .Values.redis.startup.sleepTime }}
+        else
+            PING_RESPONSE="true"
+            break
+        fi
+    done
+    
+    # Fail if sentinel never responded
+    if [ -z "$PING_RESPONSE" ]
+    then
+        echo "Failed to ping sentinel, exiting"
+        exit 1
+    else
+        echo "Got PING from sentinel"
+    fi
+
+    # Start redis-rust-proxy
+    /app/bin/redis-rust-proxy --master {{ .Release.Name }}\
+      --sentinel $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}\
+      --listen 0.0.0.0:{{ .Values.proxy.service.port }} {{- if .Values.authentication.enabled }} --password $(< /vault/secrets/redisauth) {{- end }} 
+
+  readiness-script.sh: |
+    #!/bin/bash
+    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+      echo "$response"
+      exit 1
+    fi
+
+  prestop-redis.sh: |
+
+    run_redis_command() {
+        redis-cli -h 127.0.0.1 {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -p {{ .Values.redis.service.port }} "$@"
+    }
+    failover_finished() {
+        REDIS_ROLE=$(run_redis_command role | head -1)
+        [[ "$REDIS_ROLE" != "master" ]]
+    }
+    
+    # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+    # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+    # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
+
+    echo "INFO - Starting failover checks"
+
+    count=0
+    until [ "$count" = "10" ]
+    do
+        if failover_finished 
+        then 
+            echo "INFO - Master has been successfully failed over to a different pod."
+            sleep 5
+            exit 0
+        else
+            echo "INFO - Failover not yet complete, sleeping"
+            count=$(( count + 1 ))
+            sleep 5
+        fi
+    done
+    echo "INFO - Master failover failed"
+    sleep 5
+    exit 1

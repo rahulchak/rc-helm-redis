@@ -87,7 +87,7 @@ spec:
           emptyDir: {}
         - name: redis-config-volume
           configMap:
-            name: {{ include "redis-dds.fullname" . }}-redis-config
+            name: {{ include "redis-dds.fullname" . }}-sentinels-config
             defaultMode: 0755
         - name: host-sys
           hostPath:
