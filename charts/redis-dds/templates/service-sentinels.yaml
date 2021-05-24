@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
+  type: ClusterIP
   ports:
     - port: {{ .Values.sentinel.service.port }}
       targetPort: sentinel

@@ -5,6 +5,7 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
+  type: ClusterIP
   ports:
     - port: {{ .Values.redis.service.port }}
       targetPort: redis
