@@ -10,7 +10,7 @@ spec:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/sentinels: true
-  serviceName: {{ include "redis-dds.fullname" . }}-headless
+  serviceName: {{ include "redis-dds.fullname" . }}-sentinels-headless
   replicas: {{ .Values.sentinel.replicas }}
   updateStrategy:
     type: RollingUpdate
