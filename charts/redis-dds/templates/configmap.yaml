@@ -179,7 +179,7 @@ data:
         for replica in $replicas
         do
             role=$(redis-cli -h $replica -p {{ .Values.redis.service.port }} {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} info replication | grep ^role | cut -d: -f 2)
-            if [[ "$role" == "master" ]]
+            if [[ "$(echo $role | grep -c master)" == "1" ]]
             then
                 echo "INFO - Found master at $replica"
                 master=$replica
