@@ -8,8 +8,9 @@ spec:
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "redis-dds.fullname" . }}-headless
+  serviceName: {{ include "redis-dds.fullname" . }}-replicas-headless
   replicas: {{ .Values.redis.replicas }}
+  revisionHistoryLimit: 3
   updateStrategy:
     type: RollingUpdate
   template:

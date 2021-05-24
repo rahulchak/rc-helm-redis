@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-headless
+  name: {{ .Release.Name }}-replicas-headless
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
@@ -15,10 +15,6 @@ spec:
       targetPort: redis
       protocol: TCP
       name: redis
-    - port: {{ .Values.sentinel.config.port }}
-      targetPort: sentinel
-      protocol: TCP
-      name: sentinel
   selector:
     app.kubernetes.io/role: "replica"
     {{- include "redis-dds.selectorLabels" . | nindent 4 }}

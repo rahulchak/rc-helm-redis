@@ -62,19 +62,19 @@ data:
     
   start-redis.sh: |
 
-    HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
-    echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
-    echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
+    echo "INFO - REPLICAS_HEADLESS_SERVICE: $REPLICAS_HEADLESS_SERVICE"
+    echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
     echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
     continue=true
     while [ $continue == true ]
     do
         myip=$(hostname -i)
-        if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+        if [[ -z "$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             echo "INFO - waiting until headless service contains my IP (${myip})..."
             sleep 5
         else
@@ -84,7 +84,7 @@ data:
     done
 
     # If we are the only host listed in the headless service, assume we are the only container up and running
-    if [[ -z "$(getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
+    if [[ -z "$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
         echo "INFO - headless service is empty except for my pod's IP, assuming I am a master pod"
         export REDIS_REPLICATION_MODE="master"
     else
@@ -139,14 +139,14 @@ data:
 
   start-sentinel.sh: |
 
-    HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    SENTINEL_HEADLESS_SERVICE="{{ .Release.Name }}-sentinels-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINELS_HEADLESS_SERVICE="{{ .Release.Name }}-sentinels-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
-    echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
-    echo "INFO - SENTINEL_HEADLESS_SERVICE: $SENTINEL_HEADLESS_SERVICE"
-    echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
+    echo "INFO - REPLICAS_HEADLESS_SERVICE: $REPLICAS_HEADLESS_SERVICE"
+    echo "INFO - SENTINELS_HEADLESS_SERVICE: $SENTINELS_HEADLESS_SERVICE"
+    echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
     echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
     # Startup pause
@@ -154,7 +154,7 @@ data:
     while [ $continue == true ]
     do
         myip=$(hostname -i)
-        if [[ -z "$(getent ahosts "$SENTINEL_HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+        if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
             echo "INFO - headless service does not contain the IP of this pod: ${myip}"
             sleep 5
         else
@@ -164,7 +164,7 @@ data:
     done
 
     # If we are the only host listed in the headless service, assume we are the only container up and running
-    if [[ -z "$(getent ahosts "$SENTINEL_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
+    if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
         echo "INFO - headless service only contains my IP, assuming I am the first one up"
         export REDIS_REPLICATION_MODE="first"
     else
@@ -173,7 +173,7 @@ data:
     fi
 
     if [[ "$REDIS_REPLICATION_MODE" = "first" ]]; then
-        replicas=$(getent ahosts "$HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
+        replicas=$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
 
         master="none"
         for replica in $replicas
@@ -220,7 +220,7 @@ data:
 
     # Commenting out for now...
     #    # Clean sentinels from the current sentinel nodes
-    #    for node in $( getent ahosts "$HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
+    #    for node in $( getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
     #    do
     #        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
     #        echo "INFO - Cleaned sentinel $node: $output"
@@ -234,7 +234,7 @@ data:
     
     if [[ "$REDIS_REPLICATION_MODE" = "second" ]]; then
         # Get existing sentinels 
-        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REDIS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REPLICAS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
         echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
         echo >> /data/sentinel.conf
     fi
@@ -310,7 +310,7 @@ data:
   prestop-sentinel.sh: |-
 
     run_sentinel_command() {
-        redis-cli -h "$REDIS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
+        redis-cli -h "$REPLICAS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
     }
 
     failover_finished() {
@@ -319,7 +319,7 @@ data:
       [[ "$REDIS_MASTER_HOST" != "$(hostname -i)" ]]
     }
 
-    REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
    
     # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
     # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
