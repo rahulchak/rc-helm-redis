@@ -16,6 +16,6 @@ spec:
       protocol: TCP
       name: sentinel
   selector:
+    app.kubernetes.io/sentinels: true
     {{- include "redis-dds.selectorLabels" . | nindent 4 }}
-#    app.kubernetes.io/sentinels: true
 {{- end }}
