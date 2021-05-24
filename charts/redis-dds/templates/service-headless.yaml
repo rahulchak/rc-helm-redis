@@ -6,9 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9121"
 spec:
   type: ClusterIP
   clusterIP: None 
@@ -23,5 +20,6 @@ spec:
       protocol: TCP
       name: sentinel
   selector:
+    app.kubernetes.io/role: "replica"
     {{- include "redis-dds.selectorLabels" . | nindent 4 }}
 {{- end }}
