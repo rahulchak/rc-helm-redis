@@ -221,6 +221,25 @@ data:
             exit 1
         fi
 
+        echo "INFO - Sentinels are saying that $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is the master, double checking their memory"
+
+        response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT_NUMBER ping)
+        if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+            
+            echo "INFO - Doesn't look like $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is the master, searching for it"
+
+            # Find the current master cache
+            REDIS_MASTER_HOST=$(find_master)
+
+            if [[ "$REDIS_MASTER_HOST" == "none" ]]
+            then
+                echo "ERROR - Could not find the master cache, resetting"
+                exit 1
+            else
+                echo "INFO - Found master at $REDIS_MASTER_HOST"
+            fi
+        fi
+
         echo "INFO - Discovered master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     fi
 
