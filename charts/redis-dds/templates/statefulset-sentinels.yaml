@@ -1,0 +1,115 @@
+{{ if gt (.Values.redis.replicas | int) 1 }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-sentinels
+  labels:
+    {{- include "redis-dds.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "redis-dds.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "redis-dds.fullname" . }}-headless
+  replicas: {{ .Values.sentinel.replicas }}
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- include "generic.vaultAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "redis-dds.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: disable-thp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: host-sys
+              mountPath: /host-sys
+          command: ["/bin/sh", "-c"]
+          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
+      containers:
+        - name: sentinel
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash"]
+          args: ["/redis-configs/start-sentinel.sh"]
+          env:
+          - name: MY_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          volumeMounts:
+          - name: redis-config-volume
+            mountPath: /redis-configs
+          - name: temp-data
+            mountPath: /data
+          ports:
+            - name: sentinel
+              containerPort: {{ .Values.sentinel.config.port }}
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/readiness-script.sh 26379
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/readiness-script.sh 26379
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - bash
+                  - -c
+                  - /redis-configs/prestop-sentinel.sh
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+        - name: redis-config-volume
+          configMap:
+            name: {{ include "redis-dds.fullname" . }}-redis-config
+            defaultMode: 0755
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: temp-data
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
