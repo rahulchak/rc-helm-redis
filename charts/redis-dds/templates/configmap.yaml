@@ -64,9 +64,11 @@ data:
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
     echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
+    echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
     continue=true
     while [ $continue == true ]
@@ -100,7 +102,7 @@ data:
         echo "INFO - Starting as a slave node"
 
         # Get current master
-        sentinel_info_command="redis-cli -h $REDIS_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+        sentinel_info_command="redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
 
         export REDIS_SENTINEL_INFO=($($sentinel_info_command))
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
