@@ -184,7 +184,7 @@ data:
                 echo "INFO - Found master at $replica"
                 master=$replica
             else
-                echo "INFO - $replica is not a master"
+                echo "INFO - $replica is not a master, got $role"
             fi
         done
 
