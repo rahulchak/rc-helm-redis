@@ -28,14 +28,6 @@ spec:
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-        - name: disable-thp
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          volumeMounts:
-            - name: host-sys
-              mountPath: /host-sys
-          command: ["/bin/sh", "-c"]
-          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
         - name: sentinel
           securityContext:
