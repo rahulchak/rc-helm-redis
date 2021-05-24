@@ -296,7 +296,7 @@ data:
 
     # Start redis-rust-proxy
     /app/bin/redis-rust-proxy --master {{ .Release.Name }}\
-      --sentinel localhost:{{ .Values.sentinel.service.port }}\
+      --sentinel $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}\
       --listen 0.0.0.0:{{ .Values.proxy.service.port }} {{- if .Values.authentication.enabled }} --password $(< /vault/secrets/redisauth) {{- end }} 
 
   readiness-script.sh: |
