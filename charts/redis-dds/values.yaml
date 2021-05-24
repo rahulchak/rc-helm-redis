@@ -51,6 +51,7 @@ redis:
     healthCheckCount: 20
     sleepTime: 5
 sentinel: 
+  replicas: 3
   service:
     type: ClusterIP
     port: 26379
