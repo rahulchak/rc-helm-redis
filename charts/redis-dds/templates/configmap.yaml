@@ -172,10 +172,11 @@ data:
 
     if [[ "$REDIS_REPLICATION_MODE" = "first" ]]; then
         replicas=$(getent ahosts "$HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
+
         master="none"
         for replica in $replicas
         do
-            role=$(redis-cli -h $replica info replication | grep ^role | cut -d: -f 2)
+            role=$(redis-cli -h $replica info replication 2>/dev/null | grep ^role | cut -d: -f 2)
             if [[ "$role" == "master" ]]
             then
                 echo "INFO - Found master at $replica"
@@ -185,10 +186,16 @@ data:
             fi
         done
 
+        if [[ "$master" == "none" ]]
+        then
+            echo "ERROR - Could not find the master cache, resetting"
+            exit 1
+        fi
+
         export REDIS_MASTER_HOST=$replica
         export REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
     
-        echo "INFO - I am the master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
+        echo "INFO - Current master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     else
 
         # Get current master
