@@ -63,7 +63,7 @@ data:
   start-redis.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
     echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
@@ -138,7 +138,7 @@ data:
   start-sentinel.sh: |
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
     echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
@@ -287,7 +287,7 @@ data:
       [[ "$REDIS_MASTER_HOST" != "$(hostname -i)" ]]
     }
 
-    REDIS_SERVICE="{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
    
     # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
     # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
