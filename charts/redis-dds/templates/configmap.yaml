@@ -70,6 +70,7 @@ data:
     echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
     echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
+    # Wait until headless service contains my IP
     continue=true
     while [ $continue == true ]
     do
@@ -146,7 +147,6 @@ data:
 
     echo "INFO - REPLICAS_HEADLESS_SERVICE: $REPLICAS_HEADLESS_SERVICE"
     echo "INFO - SENTINELS_HEADLESS_SERVICE: $SENTINELS_HEADLESS_SERVICE"
-    echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
     echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
     # Startup pause
@@ -166,13 +166,13 @@ data:
     # If we are the only host listed in the headless service, assume we are the only container up and running
     if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
         echo "INFO - headless service only contains my IP, assuming I am the first one up"
-        export REDIS_REPLICATION_MODE="first"
+        export SENTINEL_MODE="first"
     else
         echo "INFO - I am one of many, attempting to sync to other sentinels"
-        export REDIS_REPLICATION_MODE="second"
+        export SENTINEL_MODE="second"
     fi
 
-    if [[ "$REDIS_REPLICATION_MODE" = "first" ]]; then
+    if [[ "$SENTINEL_MODE" = "first" ]]; then
         replicas=$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
 
         master="none"
@@ -218,21 +218,20 @@ data:
         echo "INFO - Discovered master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     fi
 
-    # Commenting out for now...
-    #    # Clean sentinels from the current sentinel nodes
-    #    for node in $( getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
-    #    do
-    #        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
-    #        echo "INFO - Cleaned sentinel $node: $output"
-    #        sleep 5
-    #    done
-    #    echo "INFO - Sentinels cleanup done"
+    # Clean sentinels from the current sentinel nodes
+    for node in $( getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
+    do
+        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
+        echo "INFO - Cleaned sentinel $node: $output"
+        sleep 5
+    done
+    echo "INFO - Sentinels cleanup done"
 
     # Add current master to sentinel.conf
-    # This needs to be the first line in the file
+    # Reminder, this needs to be the first line in the file
     echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER {{ add  (div .Values.redis.replicas 2) 1 }}" > /data/sentinel.conf
     
-    if [[ "$REDIS_REPLICATION_MODE" = "second" ]]; then
+    if [[ "$SENTINEL_MODE" = "second" ]]; then
         # Get existing sentinels 
         existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $REPLICAS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
         echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
