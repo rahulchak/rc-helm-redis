@@ -24,6 +24,7 @@ spec:
       {{- include "generic.vaultAnnotations" . | nindent 8 }}
       labels:
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/sentinels: true
     spec:
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
       securityContext:
