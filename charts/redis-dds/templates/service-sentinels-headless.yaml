@@ -1,0 +1,21 @@
+{{ if gt (.Values.redis.replicas | int) 1 }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-sentinels-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "redis-dds.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None 
+  publishNotReadyAddresses: true
+  ports:
+    - port: {{ .Values.sentinel.config.port }}
+      targetPort: sentinel
+      protocol: TCP
+      name: sentinel
+  selector:
+    {{- include "redis-dds.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/sentinels: true
+{{- end }}

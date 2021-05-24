@@ -139,9 +139,11 @@ data:
 
     HEADLESS_SERVICE="{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REDIS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     echo "INFO - HEADLESS_SERVICE: $HEADLESS_SERVICE"
     echo "INFO - REDIS_SERVICE: $REDIS_SERVICE"
+    echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
     continue=true
     while [ $continue == true ]
