@@ -140,16 +140,31 @@ data:
 
   start-sentinel.sh: |
 
+    find_master() {
+        master="none"
+        for replica in $replicas
+        do
+            role=$(redis-cli -h $replica -p {{ .Values.redis.service.port }} {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} info replication | grep ^role | cut -d: -f 2)
+            if [[ "$(echo $role | grep -c master)" == "1" ]]
+            then
+                master=$replica
+                break
+            fi
+        done
+        echo "$replica"
+    }
+
     REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     SENTINELS_HEADLESS_SERVICE="{{ .Release.Name }}-sentinels-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
-    SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINELS_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
 
     echo "INFO - REPLICAS_HEADLESS_SERVICE: $REPLICAS_HEADLESS_SERVICE"
     echo "INFO - SENTINELS_HEADLESS_SERVICE: $SENTINELS_HEADLESS_SERVICE"
-    echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
+    echo "INFO - SENTINELS_SERVICE: $SENTINELS_SERVICE"
+    echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
 
-    # Startup pause
+    # Pause here until this pod is within the headless service
     continue=true
     while [ $continue == true ]
     do
@@ -175,18 +190,7 @@ data:
     if [[ "$SENTINEL_MODE" = "first" ]]; then
         replicas=$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
 
-        master="none"
-        for replica in $replicas
-        do
-            role=$(redis-cli -h $replica -p {{ .Values.redis.service.port }} {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} info replication | grep ^role | cut -d: -f 2)
-            if [[ "$(echo $role | grep -c master)" == "1" ]]
-            then
-                echo "INFO - Found master at $replica"
-                master=$replica
-            else
-                echo "INFO - $replica is not a master, got $role"
-            fi
-        done
+        master=$(find_master)
 
         if [[ "$master" == "none" ]]
         then
@@ -201,7 +205,7 @@ data:
     else
 
         # Get current master
-        sentinel_info_command="redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+        sentinel_info_command="redis-cli -h $SENTINELS_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
 
         export REDIS_SENTINEL_INFO=($($sentinel_info_command))
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
