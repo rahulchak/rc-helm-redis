@@ -5,7 +5,6 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.redis.service.type }}
   ports:
     - port: {{ .Values.redis.service.port }}
       targetPort: redis

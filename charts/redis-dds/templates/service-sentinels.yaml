@@ -6,7 +6,6 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.sentinel.service.type }}
   ports:
     - port: {{ .Values.sentinel.service.port }}
       targetPort: sentinel
