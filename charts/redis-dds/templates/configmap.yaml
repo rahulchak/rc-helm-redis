@@ -238,9 +238,11 @@ data:
             else
                 echo "INFO - Found master at $REDIS_MASTER_HOST"
             fi
+        else
+            echo "INFO - Confirmed that $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is indeed a master"
         fi
 
-        echo "INFO - Discovered master $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
+        echo "INFO - Master address set to $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
     fi
 
     # Clean sentinels from the current sentinel nodes
