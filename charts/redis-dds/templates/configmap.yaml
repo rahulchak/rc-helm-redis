@@ -233,7 +233,7 @@ data:
     
     if [[ "$SENTINEL_MODE" = "second" ]]; then
         # Get existing sentinels 
-        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $SENTINELSS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $SENTINELS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
         echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
         echo >> /data/sentinel.conf
     fi
