@@ -141,6 +141,7 @@ data:
   start-sentinel.sh: |
 
     find_master() {
+        replicas=$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
         master="none"
         for replica in $replicas
         do
@@ -188,17 +189,18 @@ data:
     fi
 
     if [[ "$SENTINEL_MODE" = "first" ]]; then
-        replicas=$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
-
+        # Find the current master cache
         master=$(find_master)
 
         if [[ "$master" == "none" ]]
         then
             echo "ERROR - Could not find the master cache, resetting"
             exit 1
+        else
+            echo "INFO - Found master at $master"
         fi
 
-        export REDIS_MASTER_HOST=$replica
+        export REDIS_MASTER_HOST=$master
         export REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
     
         echo "INFO - Current master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
