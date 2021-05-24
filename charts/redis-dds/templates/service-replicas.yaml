@@ -5,11 +5,7 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.enableAvi }}
   type: {{ .Values.redis.service.type }}
-  {{ else }}
-  type: NodePort
-  {{ end }}
   ports:
     - port: {{ .Values.redis.service.port }}
       targetPort: redis
