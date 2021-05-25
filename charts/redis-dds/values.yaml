@@ -70,8 +70,8 @@ sentinel:
   config:
     port: 26379
     dir: /data
-    downAfterMilliseconds: 60000
-    parallelSyncs: 1
+    downAfterMilliseconds: 10000
+    parallelSyncs: 2
     failoverTimeout: 18000
 proxy:
   image:

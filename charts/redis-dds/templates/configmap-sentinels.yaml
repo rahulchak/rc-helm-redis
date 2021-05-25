@@ -243,6 +243,6 @@ data:
         sleep 5
         exit 1
     else
-        echo "INFO - I am not the master, exiting cleanly"
+        echo "INFO - I am not the master, exiting"
     fi
 {{- end }}
