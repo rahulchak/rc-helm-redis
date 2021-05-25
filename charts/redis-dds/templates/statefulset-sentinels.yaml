@@ -54,8 +54,8 @@ spec:
           readinessProbe:
             periodSeconds: 5
             failureThreshold: 30
-              tcpSocket:
-                port: sentinel
+            tcpSocket:
+              port: sentinel
           readinessProbe:
             initialDelaySeconds: 10
             periodSeconds: 5
