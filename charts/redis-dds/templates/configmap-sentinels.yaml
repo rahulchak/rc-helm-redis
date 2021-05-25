@@ -205,6 +205,7 @@ data:
     REDIS_SENTINEL_INFO=$(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} get-master-addr-by-name "{{ .Release.Name }}")
     rc=$?
     if [[ "$rc" != "1" ]]
+    then
         REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
         REDIS_MASTER_PORT="${REDIS_SENTINEL_INFO[1]}"
 
