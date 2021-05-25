@@ -35,7 +35,7 @@ spec:
           image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.authentication.enabled }}
-          args: ["--redis.password", "$(< /vault/secrets/redisauth)"]
+          args: ["--redis.password", "$(< /vault/secrets/redisaut)"]
           {{- end }}
           env: 
             - name: REDIS_ALIAS
