@@ -202,9 +202,9 @@ data:
     #!/bin/bash
 
     # Get current master from myself
-    REDIS_SENTINEL_INFO=$(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} get-master-addr-by-name {{ .Release.Name }})
+    REDIS_SENTINEL_INFO=$(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }})
     rc=$?
-    if [[ "$rc" != "0" ]]
+    if [[ "$(echo $REDIS_SENTINEL_INFO | grep -c ERR)" != "0" ]]
     then
         export REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
         export REDIS_MASTER_PORT="${REDIS_SENTINEL_INFO[1]}"
@@ -215,7 +215,7 @@ data:
           exit 1
         fi
     else
-        echo "Got exit code $rc: $REDIS_SENTINEL_INFO"
+        echo "Got ERR: $REDIS_SENTINEL_INFO"
         exit 1
     fi
 
