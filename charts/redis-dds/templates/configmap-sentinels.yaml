@@ -77,7 +77,7 @@ data:
 
     # If we are the only host listed in the headless service, assume we are the only container up and running
     if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
-        echo "INFO - The senintel headless service only contains my IP, assuming I am the first one up"
+        echo "INFO - The sentinel headless service only contains my IP, assuming I am the first one up"
         export SENTINEL_MODE="first"
     else
         echo "INFO - I am one of many, attempting to sync to other sentinels"
@@ -204,7 +204,7 @@ data:
     # Get current master from myself
     export REDIS_SENTINEL_INFO=($(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }}))
 
-    if [[ "$(echo $REDIS_SENTINEL_INFO | grep -c ERR == "0" ]] && [[ "$REDIS_SENTINEL_INFO" != "" ]] 
+    if [[ "$(echo $REDIS_SENTINEL_INFO | grep -c ERR)" == "0" ]] && [[ "$REDIS_SENTINEL_INFO" != "" ]] 
     then
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
         export REDIS_MASTER_PORT=${REDIS_SENTINEL_INFO[1]}
