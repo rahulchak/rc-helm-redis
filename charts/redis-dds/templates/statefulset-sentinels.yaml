@@ -61,7 +61,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 26379
+                - /redis-configs/sentinel-liveness-script.sh
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 5

@@ -198,6 +198,25 @@ data:
       exit 1
     fi
 
+  sentinel-liveness-script.sh: |
+    #!/bin/bash
+
+    # Get current master from myself
+    REDIS_SENTINEL_INFO=$(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} get-master-addr-by-name "{{ .Release.Name }}")
+    rc=$?
+    if [[ "$rc" != "1" ]]
+        REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+        REDIS_MASTER_PORT="${REDIS_SENTINEL_INFO[1]}"
+
+        response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
+        if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+          echo "$response"
+          exit 1
+        fi
+    else
+        exit 1
+    fi
+
   prestop-sentinel.sh: |-
 
     run_sentinel_command() {
