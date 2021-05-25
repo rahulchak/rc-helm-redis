@@ -208,15 +208,13 @@ data:
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
         export REDIS_MASTER_PORT=${REDIS_SENTINEL_INFO[1]}
         
-        echo "HOST: $REDIS_MASTER_HOST, PORT: $REDIS_MASTER_PORT"
-
         response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
         if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
-          echo "Error pinging redis, got: $response"
+          echo "Got error pinging redis, got: $response"
           exit 1
         fi
     else
-        echo "Got ERR: $REDIS_SENTINEL_INFO"
+        echo "Got error connecting to sentinel: $REDIS_SENTINEL_INFO"
         exit 1
     fi
 
