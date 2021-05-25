@@ -80,13 +80,6 @@ spec:
                 - /redis-configs/sentinel-liveness-script.sh
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - bash
-                  - -c
-                  - /redis-configs/prestop-sentinel.sh
       volumes:
         - name: redis-data
           emptyDir: {}
