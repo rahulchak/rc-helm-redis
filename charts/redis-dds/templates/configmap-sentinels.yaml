@@ -202,12 +202,12 @@ data:
     #!/bin/bash
 
     # Get current master from myself
-    REDIS_SENTINEL_INFO=$(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} get-master-addr-by-name "{{ .Release.Name }}")
+    REDIS_SENTINEL_INFO=$(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} get-master-addr-by-name {{ .Release.Name }})
     rc=$?
     if [[ "$rc" != "1" ]]
     then
-        REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
-        REDIS_MASTER_PORT="${REDIS_SENTINEL_INFO[1]}"
+        export REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+        export REDIS_MASTER_PORT="${REDIS_SENTINEL_INFO[1]}"
 
         response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
         if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
