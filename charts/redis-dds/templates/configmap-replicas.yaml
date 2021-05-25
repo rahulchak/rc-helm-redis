@@ -43,6 +43,7 @@ data:
     echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
     # Wait until headless service contains my IP
+    echo "INFO - Checking to see if headless service contains my IP"
     continue=true
     while [ $continue == true ]
     do
@@ -65,14 +66,11 @@ data:
         export REDIS_REPLICATION_MODE="slave"
     fi
 
-    # Copy over redis.conf
-    cp -f /redis-configs/redis.conf /data/redis.conf
-
     if [[ "$REDIS_REPLICATION_MODE" = "master" ]]; then
         echo "INFO - Starting as master node"
         ARGS=""
     else
-        echo "INFO - Starting as a slave node"
+        echo "INFO - Starting as a slave node, discovering current master from sentinels"
 
         # Get current master
         sentinel_info_command="redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
@@ -92,6 +90,9 @@ data:
         echo "INFO - Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
         ARGS="--slaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER"
     fi
+
+    # Copy over redis.conf
+    cp -f /redis-configs/redis.conf /data/redis.conf
 
     # Update redis.conf with current password
     [[ -f /vault/secrets/redisauth ]] && export REDISAUTH="$(< /vault/secrets/redisauth)"
