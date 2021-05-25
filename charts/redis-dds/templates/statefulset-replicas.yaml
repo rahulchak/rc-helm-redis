@@ -58,7 +58,7 @@ spec:
             mountPath: /host-sys
           ports:
             - name: redis
-              containerPort: 6378
+              containerPort: {{ .Values.redis.service.port }}
               protocol: TCP
           livenessProbe:
             initialDelaySeconds: 5
@@ -70,7 +70,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6378
+                - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -81,7 +81,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6378
+                - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
           lifecycle:
@@ -116,7 +116,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6379
+                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -127,7 +127,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6379
+                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         {{- end }}
