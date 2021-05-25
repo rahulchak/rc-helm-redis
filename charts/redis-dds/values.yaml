@@ -15,7 +15,7 @@ image:
   tag: 6.0.4
 redis: 
   stateful: 
-    enabled: false
+    enabled: true
     storage: 3Gi
   replicas: 1
   service:
