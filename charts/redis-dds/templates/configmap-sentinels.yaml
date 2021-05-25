@@ -90,7 +90,7 @@ data:
 
         if [[ "$master" == "none" ]]
         then
-            echo "ERROR - Could not find the master cache, resetting"
+            echo "ERROR - Could not find the master cache, killing myself"
             exit 1
         else
             echo "INFO - Found master at $master"
@@ -142,10 +142,16 @@ data:
     fi
 
     # Clean sentinels from the current sentinel nodes
-    for node in $( getent ahosts "$REPLICAS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
+    for node in $( getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
     do
         output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
-        echo "INFO - Cleaned sentinel $node: $output"
+        rc=$?
+        if [[ "$rc" == "0" ]]
+        then
+            echo "INFO - Cleaned sentinel $node: $output"
+        else
+            echo "INFO - Failed to reset sentinel $node"
+        fi
         sleep 5
     done
     echo "INFO - Sentinels cleanup done"
