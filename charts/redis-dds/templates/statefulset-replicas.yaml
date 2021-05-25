@@ -85,10 +85,10 @@ spec:
           resources:
             limits:
               cpu: {{ .Values.redis.resources.limits.cpu }}
-              memory: {{ mul (div .Values.redis.size 10) 9  }}
+              memory: {{ mul (div .Values.redis.size 10) 9  }}Mi
             requests:
               cpu: {{ .Values.redis.resources.requests.cpu }}
-              memory: {{ mul (div .Values.redis.size 10) 9 }}
+              memory: {{ mul (div .Values.redis.size 10) 9 }}Mi
           lifecycle:
             preStop:
               exec:
