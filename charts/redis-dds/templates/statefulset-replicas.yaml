@@ -85,10 +85,10 @@ spec:
           resources:
             limits:
               cpu: {{ .Values.redis.resources.limits.cpu }}
-              memory: {{ mul (div .Values.redis.size 10) 9  }}Mi
+              memory: {{ .Values.redis.size }}Mi
             requests:
               cpu: {{ .Values.redis.resources.requests.cpu }}
-              memory: {{ mul (div .Values.redis.size 10) 9 }}Mi
+              memory: {{ .Values.redis.size }}Mi
           lifecycle:
             preStop:
               exec:
@@ -170,5 +170,5 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: {{ mul (div .Values.redis.size 2) 3 }}
+          storage: {{ mul .Values.redis.size 3 }}
   {{- end }}

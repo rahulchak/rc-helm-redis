@@ -10,7 +10,6 @@ data:
     port {{ .port }}
     slave-announce-ip MY_IP
     slave-announce-port {{ .port }}
-    maxmemory {{ .maxmemory }}
     maxmemory-policy {{ .maxmemoryPolicy }}
     dir {{ .dir }}
     repl-diskless-sync {{ .replDisklessSync }}
@@ -27,6 +26,7 @@ data:
     auto-aof-rewrite-percentage {{ .autoAofRewritePercentage }}
     {{- end }}
     {{- end }}
+    maxmemory {{ mul (div .Values.redis.size 10) 9 }}
     {{- if .Values.authentication.enabled }}
     requirepass REDISAUTH
     masterauth REDISAUTH
