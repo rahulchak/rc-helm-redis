@@ -35,8 +35,7 @@ spec:
           image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.authentication.enabled }}
-          args: 
-            - "--redis.password $(< /vault/secrets/redisauth)"
+          command: ["/scripts/entrypoint.sh"]
           {{- end }}
           env: 
             - name: REDIS_ALIAS
@@ -53,6 +52,11 @@ spec:
               value: "true"
             - name: REDIS_EXPORTER_PING_ON_CONNECT
               value: "true"
+          {{- if .Values.authentication.enabled }}
+          volumeMounts:
+          - name: entrypoint
+            mountPath: /scripts
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.prometheus.service.port }}
@@ -73,6 +77,13 @@ spec:
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.authentication.enabled }}
+      volumes:
+        - name: entrypoint
+          configMap:
+            name: {{ .Release.Name }}-entrypoint
+            defaultMode: 0755
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
