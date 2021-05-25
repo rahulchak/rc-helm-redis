@@ -20,7 +20,7 @@ redis:
   replicas: 3
   service:
     type: ClusterIP
-    port: 6378
+    port: 6379
     annotations:
       app.kubernetes.io/name: redis-dds
       app.kubernetes.io/instance: redis-dds
@@ -33,7 +33,7 @@ redis:
       cpu: 500m
       memory: 2Gi
   config:
-    port: 6378
+    port: 6379
     maxmemory: 2000mb
     maxmemoryPolicy: allkeys-lru
     dir: /data
@@ -81,7 +81,7 @@ proxy:
     tag: 0.2.11
   service: 
     type: ClusterIP
-    port: 6379
+    port: 6378
   resources:
     limits:
       cpu: 200m

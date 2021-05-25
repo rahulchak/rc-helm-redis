@@ -67,17 +67,17 @@ data:
     do
         myip=$(hostname -i)
         if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
-            echo "INFO - headless service does not contain the IP of this pod: ${myip}"
+            echo "INFO - The sentinel headless service does not contain the IP of this pod: ${myip}"
             sleep 5
         else
-            echo "INFO - headless service contains my IP, continuing: ${myip}"
+            echo "INFO - The sentinel headless service contains my IP, continuing: ${myip}"
             continue=false
         fi
     done
 
     # If we are the only host listed in the headless service, assume we are the only container up and running
     if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
-        echo "INFO - headless service only contains my IP, assuming I am the first one up"
+        echo "INFO - The senintel headless service only contains my IP, assuming I am the first one up"
         export SENTINEL_MODE="first"
     else
         echo "INFO - I am one of many, attempting to sync to other sentinels"
