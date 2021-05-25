@@ -51,9 +51,9 @@ spec:
             - name: sentinel
               containerPort: {{ .Values.sentinel.config.port }}
               protocol: TCP
-          readinessProbe:
+          startupProbe:
             periodSeconds: 5
-            failureThreshold: 30
+            failureThreshold: 60
             tcpSocket:
               port: sentinel
           readinessProbe:
