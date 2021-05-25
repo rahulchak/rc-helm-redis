@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $Release.Name }}-exporter-entrypoint
+  name: {{ .Release.Name }}-exporter-entrypoint
 data:
   entrypoint.sh: |
     pass="$(< /vault/secrets/redisauth)"
