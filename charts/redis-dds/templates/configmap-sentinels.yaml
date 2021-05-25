@@ -109,7 +109,7 @@ data:
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
         export REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
 
-        if [[ ! ($($sentinel_info_command)) ]]; then
+        if [[ ! ($($sentinel_info_command)) ]] || [[ "$REDIS_MASTER_HOST" == "" ]]; then
             # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
             # and are reporting the old one still. Once this happens the container will get stuck and never see the new
             # master. We stop here to allow the container to not pass the liveness check and be restarted.
