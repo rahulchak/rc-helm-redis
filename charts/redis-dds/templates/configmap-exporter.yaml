@@ -6,6 +6,7 @@ metadata:
   name: {{ .Release.Name }}-exporter-entrypoint
 data:
   entrypoint.sh: |
+    #!/bin/sh
     pass="$(< /vault/secrets/redisauth)"
     echo "/redis_exporter with pass: $pass"
     /redis_exporter --redis.password $pass
