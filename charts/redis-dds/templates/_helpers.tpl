@@ -70,7 +70,7 @@ Vault exporter annotations
 vault.hashicorp.com/agent-inject: "true"
 vault.hashicorp.com/tls-skip-verify: "true"
 vault.hashicorp.com/role: "{{ .Values.vault.role }}"
-{{ include "generic.vaultExporterImportAnnotations" . }}
+{{ include "generic.vaultImportAnnotations" . }}
 {{- end }}
 {{- end }}
 
