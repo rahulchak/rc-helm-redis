@@ -81,7 +81,7 @@ spec:
       volumes:
         - name: entrypoint
           configMap:
-            name: {{ .Release.Name }}-entrypoint
+            name: {{ .Release.Name }}-exporter-entrypoint
             defaultMode: 0755
       {{- end }}
       {{- with .Values.nodeSelector }}
