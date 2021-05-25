@@ -51,19 +51,13 @@ spec:
             - name: sentinel
               containerPort: {{ .Values.sentinel.config.port }}
               protocol: TCP
-          livenessProbe:
-            initialDelaySeconds: 20 
-            periodSeconds: 5
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 5
-            exec:
-              command:
-                - bash
-                - -c
-                - /redis-configs/sentinel-liveness-script.sh
           readinessProbe:
-            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 30
+              tcpSocket:
+                port: sentinel
+          readinessProbe:
+            initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 5
             successThreshold: 1
@@ -73,6 +67,17 @@ spec:
                 - bash
                 - -c
                 - /redis-configs/readiness-script.sh 26379
+          livenessProbe:
+            initialDelaySeconds: 10 
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/sentinel-liveness-script.sh
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
           lifecycle:
