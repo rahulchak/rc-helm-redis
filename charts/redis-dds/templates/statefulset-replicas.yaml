@@ -83,7 +83,12 @@ spec:
                 - -c
                 - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
           resources:
-            {{- toYaml .Values.redis.resources | nindent 12 }}
+            limits:
+              cpu: {{ .Values.redis.resources.limits.cpu }}
+              memory: {{ mul (div .Values.redis.size 10) 9  }}
+            requests:
+              cpu: {{ .Values.redis.resources.requests.cpu }}
+              memory: {{ mul (div .Values.redis.size 10) 9 }}
           lifecycle:
             preStop:
               exec:
@@ -165,5 +170,5 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: {{ .Values.redis.stateful.storage }}
+          storage: {{ mul (div .Values.redis.size 2) 3 }}
   {{- end }}
