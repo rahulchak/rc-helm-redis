@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
-  revisionHistoryLimit: 5
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
@@ -35,7 +35,7 @@ spec:
           image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.authentication.enabled }}
-          args: ["--redis.password", "$(cat /vault/secrets/redisauth)"]
+          args: ["--redis.password", "$(< /vault/secrets/redisauth)"]
           {{- end }}
           env: 
             - name: REDIS_ALIAS
