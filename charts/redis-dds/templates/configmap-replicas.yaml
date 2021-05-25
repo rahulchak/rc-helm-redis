@@ -156,36 +156,50 @@ data:
       exit 1
     fi
 
-  prestop-redis.sh: |
+  prestop-redis.sh: |-
 
-    run_redis_command() {
-        redis-cli -h 127.0.0.1 {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -p {{ .Values.redis.service.port }} "$@"
+    run_sentinel_command() {
+        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
     }
+
     failover_finished() {
-        REDIS_ROLE=$(run_redis_command role | head -1)
-        [[ "$REDIS_ROLE" != "master" ]]
+      REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name "{{ .Release.Name }}"))
+      REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+      [[ "$REDIS_MASTER_HOST" != "$(hostname -i)" ]]
     }
-    
+
+    SENTINELS_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+
     # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
     # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
     # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
 
-    echo "INFO - Starting failover checks"
+    if ! failover_finished
+    then
+        echo "INFO - I am the master pod and you are stopping me. Starting sentinel failover"
 
-    count=0
-    until [ "$count" = "10" ]
-    do
-        if failover_finished 
-        then 
-            echo "INFO - Master has been successfully failed over to a different pod."
-            sleep 5
-            exit 0
-        else
-            echo "INFO - Failover not yet complete, sleeping"
-            count=$(( count + 1 ))
-            sleep 5
-        fi
-    done
-    echo "INFO - Master failover failed"
-    sleep 5
-    exit 1
+        # if I am the master, issue a command to failover once and then wait for the failover to finish
+        run_sentinel_command failover "{{ .Release.Name }}"
+
+        echo "INFO - Waiting for failover to finish"
+
+        count=0
+        until [ "$count" = "10" ]
+        do
+            if failover_finished
+            then
+                echo "INFO - Master has been successfully failed over to a different pod."
+                sleep 5
+                exit 0
+            else
+                echo "INFO - Failover not yet complete, sleeping"
+                count=$(( count + 1 ))
+                sleep 5
+            fi
+        done
+        echo "INFO - Master failover failed"
+        sleep 5
+        exit 1
+    else
+        echo "INFO - I am not the master, exiting"
+    fi
