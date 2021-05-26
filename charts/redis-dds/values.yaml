@@ -16,7 +16,7 @@ image:
 redis: 
   size: 1024
   stateful: 
-    enabled: true
+    enabled: false
   replicas: 1
   service:
     type: ClusterIP
