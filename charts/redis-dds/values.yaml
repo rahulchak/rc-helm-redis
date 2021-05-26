@@ -62,7 +62,7 @@ sentinel:
       cpu: 100m
       memory: 128Mi
     requests:
-      cpu: 50m
+      cpu: 10m
       memory: 128Mi
   config:
     port: 26379
@@ -81,10 +81,10 @@ proxy:
     port: 6378
   resources:
     limits:
-      cpu: 200m
+      cpu: 1000m
       memory: 128Mi
     requests:
-      cpu: 100m
+      cpu: 10m
       memory: 128Mi
 prometheus:
   enabled: true
