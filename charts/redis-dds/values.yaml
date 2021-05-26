@@ -5,8 +5,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 authentication:
-  enabled: true
-  vault: kv2/dds/development/redis/redis-dev-helmtest
+  enabled: false
+#  vault: kv2/dds/development/redis/redis-dev-helmtest
 
 image:
   registry: docker.io
@@ -17,7 +17,7 @@ redis:
   size: 1024
   stateful: 
     enabled: true
-  replicas: 2
+  replicas: 1
   service:
     type: ClusterIP
     annotations:
