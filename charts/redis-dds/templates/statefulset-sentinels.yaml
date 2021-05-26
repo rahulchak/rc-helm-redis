@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "redis-dds.fullname" . }}-sentinels-headless
+  serviceName: {{ .Release.Name }}-sentinels-headless
   replicas: {{ .Values.sentinel.replicas }}
   revisionHistoryLimit: 3
   updateStrategy:
