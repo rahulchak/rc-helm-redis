@@ -103,7 +103,7 @@ data:
     else
 
         # Get current master
-        sentinel_info_command="redis-cli -h $SENTINELS_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+        sentinel_info_command="redis-cli -h $SENTINELS_SERVICE -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
 
         export REDIS_SENTINEL_INFO=($($sentinel_info_command))
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
@@ -144,7 +144,7 @@ data:
     # Clean sentinels from the current sentinel nodes
     for node in $( getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
     do
-        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
+        output=$(redis-cli -h $node -p {{ .Values.sentinel.config.port }} sentinel reset "*")
         rc=$?
         if [[ "$rc" == "0" ]]
         then
@@ -222,7 +222,7 @@ data:
   prestop-sentinel.sh: |-
 
     run_sentinel_command() {
-        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
+        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.config.port }}" sentinel "$@"
     }
 
     failover_finished() {
