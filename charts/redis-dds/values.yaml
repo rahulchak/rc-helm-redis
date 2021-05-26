@@ -29,7 +29,7 @@ redis:
     limits:
       cpu: 1000m
     requests:
-      cpu: 50m
+      cpu: 10m
   config:
     port: 6379
     maxmemoryPolicy: allkeys-lru
