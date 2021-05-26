@@ -44,7 +44,7 @@ spec:
               {{ if gt (.Values.redis.replicas | int) 1 }}
               value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.proxy.service.port }}
               {{- else }}
-              value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.redis.service.port }}
+              value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.redis.config.port }}
               {{- end }}
             - name: REDIS_EXPORTER_LOG_FORMAT
               value: json

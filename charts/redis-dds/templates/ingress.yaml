@@ -19,7 +19,7 @@ spec:
   backend:
     serviceName: {{ .Release.Name }}-replicas
     {{ if eq (.Values.redis.replicas | int) 1 }}
-    servicePort: {{ .Values.redis.service.port }}
+    servicePort: {{ .Values.redis.config.port }}
     {{- else }}
     servicePort: {{ .Values.proxy.service.port }}
     {{- end }}

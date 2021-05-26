@@ -20,7 +20,6 @@ redis:
   replicas: 2
   service:
     type: ClusterIP
-    port: 6379
     annotations:
       app.kubernetes.io/name: redis-dds
       app.kubernetes.io/instance: redis-dds
@@ -51,7 +50,6 @@ sentinel:
   replicas: 3
   service:
     type: ClusterIP
-    port: 26379
     annotations:
       app.kubernetes.io/name: redis-msp
       app.kubernetes.io/instance: redis-msp

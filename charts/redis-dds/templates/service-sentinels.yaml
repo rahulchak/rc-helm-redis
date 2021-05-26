@@ -8,7 +8,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.sentinel.service.port }}
+    - port: {{ .Values.sentinel.config.port }}
       targetPort: sentinel
       protocol: TCP
       name: sentinel

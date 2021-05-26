@@ -73,7 +73,7 @@ data:
         echo "INFO - Starting as a slave node, discovering current master from sentinels"
 
         # Get current master
-        sentinel_info_command="redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+        sentinel_info_command="redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
 
         export REDIS_SENTINEL_INFO=($($sentinel_info_command))
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
@@ -120,13 +120,13 @@ data:
     until [ "$count" = "{{ .Values.redis.startup.healthCheckCount }}" ]
     do
         # test ping response of sentinel
-        sentinel_ping=$(timeout -s9 1 redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.service.port }} ping)
+        sentinel_ping=$(timeout -s9 1 redis-cli -h $SENTINEL_SERVICE -p {{ .Values.sentinel.config.port }} ping)
     
         # Check if getent output has NXDOMAIN, or if the output is empty
         if [ "$sentinel_ping" = "" ]
         then
             count=$(( count + 1 ))
-            echo "Failed to get redis ping response from $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}, sleeping 5"
+            echo "Failed to get redis ping response from $SENTINEL_SERVICE:{{ .Values.sentinel.config.port }}, sleeping 5"
             sleep {{ .Values.redis.startup.sleepTime }}
         else
             PING_RESPONSE="true"
@@ -145,7 +145,7 @@ data:
 
     # Start redis-rust-proxy
     /app/bin/redis-rust-proxy --master {{ .Release.Name }}\
-      --sentinel $SENTINEL_SERVICE:{{ .Values.sentinel.service.port }}\
+      --sentinel $SENTINEL_SERVICE:{{ .Values.sentinel.config.port }}\
       --listen 0.0.0.0:{{ .Values.proxy.service.port }} {{- if .Values.authentication.enabled }} --password $(< /vault/secrets/redisauth) {{- end }} 
 
   readiness-script.sh: |
@@ -159,7 +159,7 @@ data:
   prestop-redis.sh: |-
 
     run_sentinel_command() {
-        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
+        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.config.port }}" sentinel "$@"
     }
 
     failover_finished() {

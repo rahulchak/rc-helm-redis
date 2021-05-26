@@ -7,7 +7,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.redis.service.port }}
+    - port: {{ .Values.redis.config.port }}
       targetPort: redis
       protocol: TCP
       name: redis

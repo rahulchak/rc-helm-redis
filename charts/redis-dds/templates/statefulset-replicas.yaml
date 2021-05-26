@@ -58,7 +58,7 @@ spec:
             mountPath: /host-sys
           ports:
             - name: redis
-              containerPort: {{ .Values.redis.service.port }}
+              containerPort: {{ .Values.redis.config.port }}
               protocol: TCP
           livenessProbe:
             initialDelaySeconds: 5
@@ -70,7 +70,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
+                - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -81,7 +81,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
+                - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
           resources:
             limits:
               cpu: {{ .Values.redis.resources.limits.cpu }}
