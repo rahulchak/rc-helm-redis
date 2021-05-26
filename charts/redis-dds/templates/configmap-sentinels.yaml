@@ -1,0 +1,269 @@
+{{ if gt (.Values.redis.replicas | int) 1 }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "redis-dds.fullname" . }}-sentinels-config
+  labels:
+    redis-version: "{{ .Release.version }}"
+data:
+  sentinel.conf: |-
+    bind 0.0.0.0
+    sentinel announce-ip MY_IP
+    sentinel announce-port {{ .Values.sentinel.config.port }}
+    {{- with .Values.sentinel.config }}
+    port {{ .port | quote }}
+    dir {{ .dir | quote }}
+    sentinel down-after-milliseconds {{ $.Release.Name }} {{ .downAfterMilliseconds }}
+    sentinel parallel-syncs {{ $.Release.Name }} {{ .parallelSyncs }}
+    sentinel failover-timeout {{ $.Release.Name }} {{ .failoverTimeout }}
+    {{ end }}
+
+  parse_sentinels.awk: |-
+    /ip/ {FOUND_IP=1}
+    /port/ {FOUND_PORT=1}
+    /runid/ {FOUND_RUNID=1}
+    !/ip|port|runid/ {
+      if (FOUND_IP==1) {
+        IP=$1; FOUND_IP=0;
+      }
+      else if (FOUND_PORT==1) {
+        PORT=$1;
+        FOUND_PORT=0;
+      } else if (FOUND_RUNID==1) {
+        printf "\nsentinel known-sentinel {{ .Release.Name }} %s %s %s", IP, PORT, $0; FOUND_RUNID=0;
+      }
+    }
+    
+  start-sentinel.sh: |
+
+    find_master() {
+        replicas=$(getent ahosts "$REPLICAS_HEADLESS_SERVICE" | awk '{print $1}' | sort -u)
+        master="none"
+        for replica in $replicas
+        do
+            role=$(redis-cli -h $replica -p {{ .Values.redis.service.port }} {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} info replication 2>/dev/null | grep ^role | cut -d: -f 2)
+            if [[ "$(echo $role | grep -c master)" == "1" ]]
+            then
+                master=$replica
+                break
+            fi
+        done
+        echo "$replica"
+    }
+
+    REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINELS_HEADLESS_SERVICE="{{ .Release.Name }}-sentinels-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+    SENTINELS_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+
+    echo "INFO - REPLICAS_HEADLESS_SERVICE: $REPLICAS_HEADLESS_SERVICE"
+    echo "INFO - SENTINELS_HEADLESS_SERVICE: $SENTINELS_HEADLESS_SERVICE"
+    echo "INFO - SENTINELS_SERVICE: $SENTINELS_SERVICE"
+    echo "INFO - REPLICAS_SERVICE: $REPLICAS_SERVICE"
+
+    # Pause here until this pod is within the headless service
+    continue=true
+    while [ $continue == true ]
+    do
+        myip=$(hostname -i)
+        if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep "^${myip}" )" ]]; then
+            echo "INFO - The sentinel headless service does not contain the IP of this pod: ${myip}"
+            sleep 5
+        else
+            echo "INFO - The sentinel headless service contains my IP, continuing: ${myip}"
+            continue=false
+        fi
+    done
+
+    # If we are the only host listed in the headless service, assume we are the only container up and running
+    if [[ -z "$(getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)")" ]]; then
+        echo "INFO - The sentinel headless service only contains my IP, assuming I am the first one up"
+        export SENTINEL_MODE="first"
+    else
+        echo "INFO - I am one of many, attempting to sync to other sentinels"
+        export SENTINEL_MODE="second"
+    fi
+
+    if [[ "$SENTINEL_MODE" = "first" ]]; then
+        # Find the current master cache
+        master=$(find_master)
+
+        if [[ "$master" == "none" ]]
+        then
+            echo "ERROR - Could not find the master cache, killing myself"
+            exit 1
+        else
+            echo "INFO - Found master at $master"
+        fi
+
+        export REDIS_MASTER_HOST=$master
+        export REDIS_MASTER_PORT_NUMBER="{{ .Values.redis.service.port }}"
+    
+        echo "INFO - Current master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
+    else
+
+        # Get current master
+        sentinel_info_command="redis-cli -h $SENTINELS_SERVICE -p {{ .Values.sentinel.service.port }} sentinel get-master-addr-by-name {{ .Release.Name }}"
+
+        export REDIS_SENTINEL_INFO=($($sentinel_info_command))
+        export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+        export REDIS_MASTER_PORT_NUMBER=${REDIS_SENTINEL_INFO[1]}
+
+        if [[ ! ($($sentinel_info_command)) ]] || [[ "$REDIS_MASTER_HOST" == "" ]]; then
+            # master doesn't actually exist, this probably means the remaining pods haven't elected a new one yet
+            # and are reporting the old one still. Once this happens the container will get stuck and never see the new
+            # master. We stop here to allow the container to not pass the liveness check and be restarted.
+            echo "Could not find the master from the existing sentinels, exiting"
+            exit 1
+        fi
+
+        echo "INFO - Sentinels are saying that $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is the master, double checking their memory"
+
+        response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT_NUMBER ping 2>/dev/null)
+        if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+            
+            echo "INFO - Doesn't look like $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is the master, searching for it"
+
+            # Find the current master cache
+            REDIS_MASTER_HOST=$(find_master)
+
+            if [[ "$REDIS_MASTER_HOST" == "none" ]]
+            then
+                echo "ERROR - Could not find the master cache, resetting"
+                exit 1
+            else
+                echo "INFO - Found master at $REDIS_MASTER_HOST"
+            fi
+        else
+            echo "INFO - Confirmed that $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is indeed a master"
+        fi
+
+        echo "INFO - Master address set to $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
+    fi
+
+    # Clean sentinels from the current sentinel nodes
+    for node in $( getent ahosts "$SENTINELS_HEADLESS_SERVICE" | grep -v "^$(hostname -i)" | cut -f 1 -d ' ' | uniq )
+    do
+        output=$(redis-cli -h $node -p {{ .Values.sentinel.service.port }} sentinel reset "*")
+        rc=$?
+        if [[ "$rc" == "0" ]]
+        then
+            echo "INFO - Cleaned sentinel $node: $output"
+        else
+            echo "INFO - Failed to reset sentinel $node"
+        fi
+        sleep 5
+    done
+    echo "INFO - Sentinels cleanup done"
+
+    # Add current master to sentinel.conf
+    # Reminder, this needs to be the first line in the file
+    echo "sentinel monitor {{ .Release.Name }} $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER {{ add  (div .Values.redis.replicas 2) 1 }}" > /data/sentinel.conf
+    
+    if [[ "$SENTINEL_MODE" = "second" ]]; then
+        # Get existing sentinels 
+        existing_sentinels=$(timeout -s 3 10 redis-cli --raw -h $SENTINELS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
+        echo >> /data/sentinel.conf
+    fi
+
+    # Set the auth pass is authentication is enabled:
+    if [[ -f /vault/secrets/redisauth ]];
+    then
+        export REDISAUTH="$(< /vault/secrets/redisauth)"
+        echo "sentinel auth-pass {{ .Release.Name }} ${REDISAUTH}" >> /data/sentinel.conf
+    fi
+
+    # Copy over rest of sentinel.conf
+    cat /redis-configs/sentinel.conf >> /data/sentinel.conf
+
+    # Set MY_IP in the sentinel.conf
+    sed -i "s/MY_IP/$MY_IP/g" /data/sentinel.conf
+
+    # Debug output
+    echo
+    echo "INFO - /data/sentinel.conf:"
+    cat /data/sentinel.conf
+    echo 
+    echo
+
+    # Start redis-server
+    redis-server /data/sentinel.conf --sentinel
+
+  readiness-script.sh: |
+    #!/bin/bash
+    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+      echo "$response"
+      exit 1
+    fi
+
+  sentinel-liveness-script.sh: |
+    #!/bin/bash
+
+    # Get current master from myself
+    export REDIS_SENTINEL_INFO=($(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }}))
+
+    if [[ "$(echo $REDIS_SENTINEL_INFO | grep -c ERR)" == "0" ]] && [[ "$REDIS_SENTINEL_INFO" != "" ]] 
+    then
+        export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
+        export REDIS_MASTER_PORT=${REDIS_SENTINEL_INFO[1]}
+        
+        response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
+        if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+          echo "Got error pinging redis, got: $response"
+          exit 1
+        fi
+    else
+        echo "Got error connecting to sentinel: $REDIS_SENTINEL_INFO"
+        exit 1
+    fi
+
+  prestop-sentinel.sh: |-
+
+    run_sentinel_command() {
+        redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.service.port }}" sentinel "$@"
+    }
+
+    failover_finished() {
+      REDIS_SENTINEL_INFO=($(run_sentinel_command get-master-addr-by-name "{{ .Release.Name }}"))
+      REDIS_MASTER_HOST="${REDIS_SENTINEL_INFO[0]}"
+      [[ "$REDIS_MASTER_HOST" != "$(hostname -i)" ]]
+    }
+
+    SENTINELS_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
+   
+    # redis-cli automatically consumes credentials from the REDISCLI_AUTH variable
+    # [[ -n "$REDIS_PASSWORD" ]] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+    # [[ -f "$REDIS_PASSWORD_FILE" ]] && export REDISCLI_AUTH="$(< "${REDIS_PASSWORD_FILE}")"
+
+    if ! failover_finished
+    then
+        echo "INFO - I am the master pod and you are stopping me. Starting sentinel failover"
+
+        # if I am the master, issue a command to failover once and then wait for the failover to finish
+        run_sentinel_command failover "{{ .Release.Name }}"
+
+        echo "INFO - Waiting for failover to finish"
+    
+        count=0
+        until [ "$count" = "10" ]
+        do
+            if failover_finished 
+            then 
+                echo "INFO - Master has been successfully failed over to a different pod."
+                sleep 5
+                exit 0
+            else
+                echo "INFO - Failover not yet complete, sleeping"
+                count=$(( count + 1 ))
+                sleep 5
+            fi
+        done
+        echo "INFO - Master failover failed"
+        sleep 5
+        exit 1
+    else
+        echo "INFO - I am not the master, exiting"
+    fi
+{{- end }}

@@ -8,8 +8,9 @@ spec:
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "redis-dds.fullname" . }}-headless
+  serviceName: {{ include "redis-dds.fullname" . }}-replicas-headless
   replicas: {{ .Values.redis.replicas }}
+  revisionHistoryLimit: 3
   updateStrategy:
     type: RollingUpdate
   template:
@@ -18,9 +19,10 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
-        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap-replicas.yaml") . | sha256sum }}
       {{- include "generic.vaultAnnotations" . | nindent 8 }}
       labels:
+        app.kubernetes.io/role: "replica"
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
@@ -56,7 +58,7 @@ spec:
             mountPath: /host-sys
           ports:
             - name: redis
-              containerPort: 6378
+              containerPort: {{ .Values.redis.service.port }}
               protocol: TCP
           livenessProbe:
             initialDelaySeconds: 5
@@ -68,7 +70,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6378
+                - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -79,9 +81,14 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6378
+                - /redis-configs/readiness-script.sh {{ .Values.redis.service.port }}
           resources:
-            {{- toYaml .Values.redis.resources | nindent 12 }}
+            limits:
+              cpu: {{ .Values.redis.resources.limits.cpu }}
+              memory: {{ .Values.redis.size }}Mi
+            requests:
+              cpu: {{ .Values.redis.resources.requests.cpu }}
+              memory: {{ .Values.redis.size }}Mi
           lifecycle:
             preStop:
               exec:
@@ -90,58 +97,6 @@ spec:
                   - -c
                   - /redis-configs/prestop-redis.sh
         {{ if gt (.Values.redis.replicas | int) 1 }}
-        - name: sentinel
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["/bin/bash"]
-          args: ["/redis-configs/start-sentinel.sh"]
-          env:
-          - name: MY_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          volumeMounts:
-          - name: redis-config-volume
-            mountPath: /redis-configs
-          - name: temp-data
-            mountPath: /data
-          ports:
-            - name: sentinel
-              containerPort: {{ .Values.sentinel.config.port }}
-              protocol: TCP
-          livenessProbe:
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 5
-            exec:
-              command:
-                - bash
-                - -c
-                - /redis-configs/readiness-script.sh 26379
-          readinessProbe:
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 5
-            exec:
-              command:
-                - bash
-                - -c
-                - /redis-configs/readiness-script.sh 26379
-          resources:
-            {{- toYaml .Values.redis.resources | nindent 12 }}
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - bash
-                  - -c
-                  - /redis-configs/prestop-sentinel.sh
         - name: proxy
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -166,7 +121,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6379
+                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 5
@@ -177,7 +132,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 6379
+                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         {{- end }}
@@ -188,7 +143,7 @@ spec:
         {{ end }}
         - name: redis-config-volume
           configMap:
-            name: {{ include "redis-dds.fullname" . }}-redis-config
+            name: {{ include "redis-dds.fullname" . }}-replicas-config
             defaultMode: 0755
         - name: host-sys
           hostPath:
@@ -215,5 +170,5 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: {{ .Values.redis.stateful.storage }}
+          storage: {{ mul .Values.redis.size 3 }}
   {{- end }}

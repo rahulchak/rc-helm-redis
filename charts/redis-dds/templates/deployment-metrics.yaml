@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "redis-dds.labels" . | nindent 4 }}
 spec:
-  revisionHistoryLimit: 5
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
@@ -16,6 +16,7 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+        {{- include "generic.vaultAnnotations" . | nindent 8 }}
         prometheus.io/ddsscrape: "true"
         prometheus.io/environment: "{{ .Values.environment }}"
         prometheus.io/technology: "redis"
@@ -33,17 +34,29 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.authentication.enabled }}
+          command: ["/scripts/entrypoint.sh"]
+          {{- end }}
           env: 
             - name: REDIS_ALIAS
               value: {{ .Release.Name }}
             - name: REDIS_ADDR
-              value: redis://{{ .Release.Name }}-service.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.proxy.service.port }}
+              {{ if gt (.Values.redis.replicas | int) 1 }}
+              value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.proxy.service.port }}
+              {{- else }}
+              value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.redis.service.port }}
+              {{- end }}
             - name: REDIS_EXPORTER_LOG_FORMAT
               value: json
             - name: REDIS_EXPORTER_INCL_SYSTEM_METRICS
               value: "true"
             - name: REDIS_EXPORTER_PING_ON_CONNECT
               value: "true"
+          {{- if .Values.authentication.enabled }}
+          volumeMounts:
+          - name: entrypoint
+            mountPath: /scripts
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.prometheus.service.port }}
@@ -64,6 +77,13 @@ spec:
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.authentication.enabled }}
+      volumes:
+        - name: entrypoint
+          configMap:
+            name: {{ .Release.Name }}-exporter-entrypoint
+            defaultMode: 0755
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

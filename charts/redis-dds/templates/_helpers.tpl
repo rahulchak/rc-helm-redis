@@ -63,7 +63,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Vault annotations
+Vault exporter annotations
 */}}
 {{- define "generic.vaultAnnotations" -}}
 {{- if .Values.authentication.enabled }}

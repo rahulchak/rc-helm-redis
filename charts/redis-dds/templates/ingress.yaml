@@ -17,7 +17,7 @@ metadata:
     }'
 spec:
   backend:
-    serviceName: {{ .Release.Name }}-service
+    serviceName: {{ .Release.Name }}-replicas
     {{ if eq (.Values.redis.replicas | int) 1 }}
     servicePort: {{ .Values.redis.service.port }}
     {{- else }}

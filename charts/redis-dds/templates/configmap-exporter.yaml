@@ -1,0 +1,14 @@
+{{- if .Values.prometheus.enabled }}
+{{- if .Values.authentication.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-exporter-entrypoint
+data:
+  entrypoint.sh: |
+    #!/bin/sh
+    pass="$(cat /vault/secrets/redisauth)"
+    echo "/redis_exporter with pass: $pass"
+    /redis_exporter --redis.password $pass
+{{- end }}
+{{- end }}
