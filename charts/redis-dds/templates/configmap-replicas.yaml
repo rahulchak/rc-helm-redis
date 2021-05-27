@@ -6,6 +6,7 @@ metadata:
     redis-version: "{{ .Release.version }}"
 data:
   redis.conf: |- 
+    bind 0.0.0.0
     {{- with .Values.redis.config }}
     port {{ .port }}
     slave-announce-ip MY_IP
