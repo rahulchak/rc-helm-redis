@@ -109,7 +109,7 @@ data:
     echo
     echo "INFO - Starting redis with: redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS"
     echo
-    redis-server /data/redis.conf --slave-announce-ip $MY_IP $ARGS
+    {{ .Values.image.command }} /data/redis.conf --slave-announce-ip $MY_IP $ARGS
 
   start-proxy.sh: |
 

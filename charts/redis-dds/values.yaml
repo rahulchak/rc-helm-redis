@@ -13,6 +13,7 @@ image:
   repository: redis
   pullPolicy: IfNotPresent
   tag: 6.0.4
+  command: redis-server
 redis: 
   size: 1024
   stateful: 
