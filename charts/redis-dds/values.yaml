@@ -84,7 +84,7 @@ proxy:
     requests:
       cpu: 10m
       memory: 128Mi
-prometheus:
+exporter:
   enabled: true
   image:
     registry: docker.io

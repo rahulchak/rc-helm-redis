@@ -1,4 +1,4 @@
-{{- if .Values.prometheus.enabled }}
+{{- if .Values.exporter.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,7 +32,7 @@ spec:
         - name: exporter
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
+          image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.authentication.enabled }}
           command: ["/scripts/entrypoint.sh"]
@@ -59,7 +59,7 @@ spec:
           {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.prometheus.service.port }}
+              containerPort: {{ .Values.exporter.service.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -76,7 +76,7 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.exporter.resources | nindent 12 }}
       {{- if .Values.authentication.enabled }}
       volumes:
         - name: entrypoint
