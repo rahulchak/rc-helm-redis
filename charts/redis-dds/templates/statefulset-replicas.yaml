@@ -37,7 +37,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
       containers:
-        - name: replica
+        - name: {{ .Release.Name }}-replica
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -97,7 +97,7 @@ spec:
                   - -c
                   - /redis-configs/prestop-redis.sh
         {{ if gt (.Values.redis.replicas | int) 1 }}
-        - name: proxy
+        - name: {{ .Release.Name }}-proxy
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
