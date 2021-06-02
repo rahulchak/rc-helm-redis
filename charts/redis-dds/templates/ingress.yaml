@@ -1,5 +1,5 @@
 {{ if .Values.enableAvi }}
-apiVersion: networking.k8s.io/v1beta
+apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: "{{ include "redis-dds.fullname" . }}-ingress"
