@@ -170,5 +170,5 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: {{ mul .Values.redis.size 3 }}
+          storage: {{ mul .Values.redis.size 3 }}M
   {{- end }}
