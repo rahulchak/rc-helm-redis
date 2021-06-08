@@ -16,7 +16,8 @@ metadata:
         },
         "gslbservice":{
             "name": "{{ .Release.Name }}",
-            "domain_names": ["{{ .Release.Name }}.{{ .Values.ingress.gslbDomain }}"]
+            "domain_names": ["{{ .Release.Name }}.{{ .Values.ingress.gslbDomain }}"],
+            "groups": [{"members": [{"ratio": 1}]}]
         }
     }'
 spec:
