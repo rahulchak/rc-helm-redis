@@ -17,7 +17,6 @@ metadata:
         "gslbservice":{
             "name": "{{ .Release.Name }}",
             "domain_names": ["{{ .Release.Name }}.{{ .Values.ingress.gslbDomain }}"],
-            "algorithm": "GSLB_ALGORITHM_ROUND_ROBIN",
             "groups": [{"members": [{"ratio": 20}]}]
         }
     }'
