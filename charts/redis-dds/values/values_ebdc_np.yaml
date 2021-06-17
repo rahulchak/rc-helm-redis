@@ -12,7 +12,7 @@ ingress:
   enabled: true
   domain: dc2.np.dds.chr8s.io
   gslbDomain: np.dds.chr8s.io
-  # Port that avi should expose on the VIP
   aviPort: 6379
   annotations: {}
-  tls: []
+  health_monitor: healthmonitor-8ff6be07-eebb-4ceb-937c-bef05c0775b8
+  ratio: 20
