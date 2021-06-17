@@ -12,7 +12,7 @@ ingress:
   enabled: true
   domain: dc2.prd.dds.chr8s.io
   gslbDomain: prd.dds.chr8s.io
-  # Port that avi should expose on the VIP
   aviPort: 6379
   annotations: {}
-  tls: []
+  health_monitor: "/api/healthmonitor?name=gslb-redis"
+  ratio: 20
