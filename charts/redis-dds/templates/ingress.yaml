@@ -19,7 +19,7 @@ metadata:
             "domain_names": ["{{ .Release.Name }}.{{ .Values.ingress.gslbDomain }}"],
             "groups": [{"members": [{"ratio": 20}]}],
             "health_monitor_refs": [
-              "gslb-redis"
+              "healthmonitor-8ff6be07-eebb-4ceb-937c-bef05c0775b8"
             ]
         }
     }'
