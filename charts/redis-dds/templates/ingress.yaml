@@ -17,9 +17,9 @@ metadata:
         "gslbservice":{
             "name": "{{ .Release.Name }}",
             "domain_names": ["{{ .Release.Name }}.{{ .Values.ingress.gslbDomain }}"],
-            "groups": [{"members": [{"ratio": 20}]}],
+            "groups": [{"members": [{"ratio": {{ .Values.ingress.ratio }};}]}],
             "health_monitor_refs": [
-              "healthmonitor-8ff6be07-eebb-4ceb-937c-bef05c0775b8"
+              "{{ .Values.ingress.health_monitor }}"
             ]
         }
     }'
