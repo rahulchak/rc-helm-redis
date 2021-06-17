@@ -14,5 +14,5 @@ ingress:
   gslbDomain: np.dds.chr8s.io
   aviPort: 6379
   annotations: {}
-  health_monitor: healthmonitor-8ff6be07-eebb-4ceb-937c-bef05c0775b8
+  health_monitor: "/api/healthmonitor?name=gslb-redis"
   ratio: 20
