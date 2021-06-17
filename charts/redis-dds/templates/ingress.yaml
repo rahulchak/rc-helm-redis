@@ -19,7 +19,7 @@ metadata:
             "domain_names": ["{{ .Release.Name }}.{{ .Values.ingress.gslbDomain }}"],
             "groups": [{"members": [{"ratio": {{ .Values.ingress.ratio }}}]}],
             "health_monitor_refs": [
-              "{{ .Values.ingress.health_monitor }}"
+              "/api/healthmonitor?name=gslb-redis"
             ]
         }
     }'
