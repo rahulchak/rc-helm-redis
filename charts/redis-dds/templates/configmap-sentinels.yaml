@@ -188,7 +188,7 @@ data:
     echo
 
     # Start redis-server
-    redis-server /data/sentinel.conf --sentinel
+    {{ .Values.image.command }} /data/sentinel.conf --sentinel
 
   readiness-script.sh: |
     #!/bin/bash
