@@ -61,11 +61,11 @@ spec:
               containerPort: {{ .Values.redis.config.port }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 5
+            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 6
+            failureThreshold: 10
             exec:
               command:
                 - bash
