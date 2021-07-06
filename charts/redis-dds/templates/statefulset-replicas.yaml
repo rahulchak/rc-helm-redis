@@ -62,10 +62,10 @@ spec:
               protocol: TCP
           livenessProbe:
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 30
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 5
+            failureThreshold: 6
             exec:
               command:
                 - bash
