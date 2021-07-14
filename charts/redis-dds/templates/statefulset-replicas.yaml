@@ -85,7 +85,7 @@ spec:
           resources:
             limits:
               cpu: {{ .Values.redis.resources.limits.cpu }}
-              memory: {{ .Values.redis.size }}Mi
+              memory: {{ add .Values.redis.size 1024 }}Mi
             requests:
               cpu: {{ .Values.redis.resources.requests.cpu }}
               memory: {{ .Values.redis.size }}Mi
