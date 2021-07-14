@@ -19,6 +19,7 @@ data:
     repl-ping-replica-period 3
     repl-diskless-sync {{ .replDisklessSync }}
     hz {{ .hz }}
+    timeout {{ .timeout }}
     {{- if $.Values.redis.stateful.enabled }}
     appendonly {{ .appendonly }}
     appendfsync {{ .appendfsync }}

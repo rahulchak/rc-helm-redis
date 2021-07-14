@@ -44,6 +44,7 @@ redis:
     replDisklessSync: "yes"
     replTimeout: 360
     replBacklogSize: 100mb
+    timeout: 360
   startup:
     healthCheckCount: 20
     sleepTime: 5
