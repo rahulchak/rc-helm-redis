@@ -46,16 +46,16 @@ redis:
     replBacklogSize: 100mb
     timeout: 360
   startup:
-    healthCheckCount: 20
+    healthCheckCount: 30
     sleepTime: 5
 sentinel: 
   replicas: 3
   service:
     type: ClusterIP
     annotations:
-      app.kubernetes.io/name: redis-msp
-      app.kubernetes.io/instance: redis-msp
-      app.kubernetes.io/version: 6.0.3
+      app.kubernetes.io/name: redis-dds
+      app.kubernetes.io/instance: redis-dds
+      app.kubernetes.io/version: 6.0.4
       service.beta.kubernetes.io/azure-load-balancer-internal: "true"
   resources:
     limits:
@@ -98,11 +98,11 @@ exporter:
     port: 9121
   resources:
     limits:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 50m
+      memory: 64Mi
     requests:
       cpu: 10m
-      memory: 128Mi
+      memory: 32Mi
 serviceAccount:
   create: true
   name: ""
