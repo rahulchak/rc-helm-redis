@@ -13,7 +13,6 @@ data:
     slave-announce-port {{ .port }}
     maxmemory-policy {{ .maxmemoryPolicy }}
     dir {{ .dir }}
-    repl-diskless-sync {{ .replDisklessSync }}
     repl-timeout {{ .replTimeout }}
     repl-backlog-size {{ .replBacklogSize }}
     repl-ping-replica-period 3
