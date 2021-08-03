@@ -16,6 +16,7 @@ image:
   command: redis-server
 redis: 
   size: 1024
+  buffer: 1024
   stateful: 
     enabled: false
   replicas: 1
