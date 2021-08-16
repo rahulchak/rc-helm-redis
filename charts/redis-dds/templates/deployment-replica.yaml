@@ -1,6 +1,6 @@
-{{ if or (gt (.Values.redis.replicas | int) 1) (.Values.stateful) }}
+{{ if and (eq (.Values.redis.replicas | int) 1) (not .Values.stateful) }}
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: {{ .Release.Name }}-replicas
   labels:
@@ -9,8 +9,7 @@ spec:
   selector:
     matchLabels:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
-  serviceName: {{ .Release.Name }}-replicas-headless
-  replicas: {{ .Values.redis.replicas }}
+  replicas: 1
   revisionHistoryLimit: 3
   updateStrategy:
     type: RollingUpdate
@@ -97,51 +96,11 @@ spec:
                   - bash
                   - -c
                   - /redis-configs/prestop-redis.sh
-        {{ if gt (.Values.redis.replicas | int) 1 }}
-        - name: {{ .Release.Name }}-proxy
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
-          imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
-          command: ["/bin/bash"]
-          args: ["/redis-configs/start-proxy.sh"]
-          volumeMounts:
-          - name: redis-config-volume
-            mountPath: /redis-configs
-          ports:
-            - name: proxy
-              containerPort: {{ .Values.proxy.service.port }}
-              protocol: TCP
-          livenessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 5
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 10
-            exec:
-              command:
-                - bash
-                - -c
-                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
-          readinessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 5
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 10
-            exec:
-              command:
-                - bash
-                - -c
-                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
-        {{- end }}
       volumes:
-        {{ if not .Values.redis.stateful.enabled }}
         - name: redis-data
           emptyDir: {}
-        {{ end }}
         - name: redis-config-volume
           configMap:
             name: {{ include "redis-dds.fullname" . }}-replicas-config
@@ -163,14 +122,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-  {{- if .Values.redis.stateful.enabled }}
-  volumeClaimTemplates:
-  - metadata:
-      name: redis-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: {{ mul .Values.redis.size 3 }}M
-  {{- end }}
 {{- end }}

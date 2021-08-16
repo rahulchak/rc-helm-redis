@@ -34,7 +34,7 @@ data:
     {{ end }}
     
   start-redis.sh: |
-
+    {{ if or (gt (.Values.redis.replicas | int) 1) (.Values.stateful) }}
     REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
@@ -91,6 +91,7 @@ data:
         echo "INFO - Discovered master: $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER"
         ARGS="--slaveof $REDIS_MASTER_HOST $REDIS_MASTER_PORT_NUMBER"
     fi
+    {{- end }}
 
     # Copy over redis.conf
     cp -f /redis-configs/redis.conf /data/redis.conf

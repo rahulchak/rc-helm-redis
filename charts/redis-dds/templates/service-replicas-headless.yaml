@@ -1,3 +1,4 @@
+{{ if or (gt (.Values.redis.replicas | int) 1) (.Values.stateful) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,3 +18,4 @@ spec:
   selector:
     app.kubernetes.io/role: "replica"
     {{- include "redis-dds.selectorLabels" . | nindent 4 }}
+{{- end }}
