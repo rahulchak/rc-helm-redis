@@ -42,7 +42,6 @@ spec:
               value: {{ .Release.Name }}
             - name: REDIS_ADDR
               value: redis://{{ .Release.Name }}.{{ .Values.ingress.domain }}:6379
-              {{- end }}
             - name: REDIS_EXPORTER_LOG_FORMAT
               value: json
             - name: REDIS_EXPORTER_INCL_SYSTEM_METRICS
