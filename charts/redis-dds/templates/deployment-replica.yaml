@@ -11,8 +11,6 @@ spec:
       {{- include "redis-dds.selectorLabels" . | nindent 6 }}
   replicas: 1
   revisionHistoryLimit: 3
-  updateStrategy:
-    type: RollingUpdate
   template:
     metadata:
       annotations:
