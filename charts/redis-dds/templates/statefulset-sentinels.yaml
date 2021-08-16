@@ -79,7 +79,7 @@ spec:
                 - -c
                 - /redis-configs/sentinel-liveness-script.sh
           resources:
-            {{- toYaml .Values.redis.resources | nindent 12 }}
+            {{- toYaml .Values.sentinel.resources | nindent 12 }}
       volumes:
         - name: redis-data
           emptyDir: {}
