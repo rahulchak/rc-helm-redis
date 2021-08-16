@@ -59,7 +59,7 @@ spec:
               containerPort: {{ .Values.redis.config.port }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 180
+            initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
             successThreshold: 1
@@ -70,7 +70,7 @@ spec:
                 - -c
                 - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
           readinessProbe:
-            initialDelaySeconds: 180
+            initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
             successThreshold: 1
