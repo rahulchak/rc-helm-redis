@@ -41,10 +41,7 @@ spec:
             - name: REDIS_ALIAS
               value: {{ .Release.Name }}
             - name: REDIS_ADDR
-              {{ if gt (.Values.redis.replicas | int) 1 }}
-              value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.proxy.service.port }}
-              {{- else }}
-              value: redis://{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.redis.config.port }}
+              value: redis://{{ .Release.Name }}.{{ .Values.ingress.domain }}:6379
               {{- end }}
             - name: REDIS_EXPORTER_LOG_FORMAT
               value: json
@@ -68,6 +65,8 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 5
             timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 10
           readinessProbe:
             httpGet:
               path: /
@@ -75,6 +74,8 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 5
             timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 10
           resources:
             {{- toYaml .Values.exporter.resources | nindent 12 }}
       {{- if .Values.authentication.enabled }}
