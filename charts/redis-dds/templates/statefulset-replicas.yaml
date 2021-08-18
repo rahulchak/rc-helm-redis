@@ -1,4 +1,4 @@
-{{ if or (gt (.Values.redis.replicas | int) 1) (.Values.stateful) }}
+{{ if or (gt (.Values.redis.replicas | int) 1) (.Values.stateful.enabled) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
