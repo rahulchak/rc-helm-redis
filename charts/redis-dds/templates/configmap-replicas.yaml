@@ -34,7 +34,7 @@ data:
     {{ end }}
     
   start-redis.sh: |
-    {{ if or (gt (.Values.redis.replicas | int) 1) (.Values.stateful.enabled) }}
+    {{ if or (gt (.Values.redis.replicas | int) 1) (.Values.redis.stateful.enabled) }}
     REPLICAS_HEADLESS_SERVICE="{{ .Release.Name }}-replicas-headless.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     REPLICAS_SERVICE="{{ .Release.Name }}-replicas.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"

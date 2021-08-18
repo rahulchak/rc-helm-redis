@@ -1,4 +1,4 @@
-{{ if and (eq (.Values.redis.replicas | int) 1) (not .Values.stateful.enabled) }}
+{{ if and (eq (.Values.redis.replicas | int) 1) (not .Values.redis.stateful.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
