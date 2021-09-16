@@ -26,6 +26,10 @@ spec:
         app.kubernetes.io/role: "replica"
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            topologyKey: "kubernetes.io/hostname"
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
