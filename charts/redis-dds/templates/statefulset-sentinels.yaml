@@ -26,6 +26,20 @@ spec:
         app.kubernetes.io/role: "sentinel"
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/instance
+                operator: In
+                values:
+                - {{ .Release.Name }}
+              - key: app.kubernetes.io/role
+                operator: In
+                values:
+                - sentinel
+            topologyKey: "kubernetes.io/hostname"
       serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
