@@ -1,5 +1,4 @@
 clusterDomain: cluster.local
-enableAvi: true
 environment: dev
 nameOverride: ""
 fullnameOverride: ""
@@ -20,6 +19,9 @@ redis:
   stateful: 
     enabled: false
   replicas: 1
+  ako:
+    enabled: true
+    port: 6379
   service:
     type: ClusterIP
     annotations:
