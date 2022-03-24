@@ -58,6 +58,16 @@ spec:
             - name: redis
               containerPort: {{ .Values.redis.config.port }}
               protocol: TCP
+          startupProbe:
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 20
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/startup-script.sh {{ .Values.redis.config.port }}
           livenessProbe:
             initialDelaySeconds: 5
             periodSeconds: 30
@@ -79,7 +89,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
+                - /redis-configs/liveness-script.sh {{ .Values.redis.config.port }}
           resources:
             limits:
               cpu: {{ .Values.redis.resources.limits.cpu }}

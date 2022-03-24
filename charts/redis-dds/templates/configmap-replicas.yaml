@@ -159,7 +159,7 @@ data:
       exit 1
     fi
 
-  readiness-script.sh: |
+  startup-script.sh: |
     #!/bin/bash
 
     # Check if container is loading from master
