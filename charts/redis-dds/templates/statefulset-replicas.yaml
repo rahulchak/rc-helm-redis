@@ -76,22 +76,22 @@ spec:
               containerPort: {{ .Values.redis.config.port }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 180
+            initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 10
+            failureThreshold: 20
             exec:
               command:
                 - bash
                 - -c
                 - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
           readinessProbe:
-            initialDelaySeconds: 180
+            initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 10
+            failureThreshold: 20
             exec:
               command:
                 - bash
@@ -127,22 +127,22 @@ spec:
               containerPort: {{ .Values.proxy.service.port }}
               protocol: TCP
           livenessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 5
+            initialDelaySeconds: 10
+            periodSeconds: 10
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 10
+            failureThreshold: 20
             exec:
               command:
                 - bash
                 - -c
                 - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
           readinessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 5
+            initialDelaySeconds: 10
+            periodSeconds: 10
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 10
+            failureThreshold: 20
             exec:
               command:
                 - bash
