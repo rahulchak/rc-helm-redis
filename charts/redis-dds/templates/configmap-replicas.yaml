@@ -150,10 +150,33 @@ data:
       --sentinel $SENTINEL_SERVICE:{{ .Values.sentinel.config.port }}\
       --listen 0.0.0.0:{{ .Values.proxy.service.port }} {{- if .Values.authentication.enabled }} --password $(< /vault/secrets/redisauth) {{- end }} 
 
-  readiness-script.sh: |
+  liveness-script.sh: |
     #!/bin/bash
     response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
-    if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ] && [ "$response" != "MISCONF Errors writing to the AOF file: No space left on device" ]; then
+    responseFirstWord=$(echo $response | head -n1 | awk '{print $1;}')
+    if [ "$response" != "PONG" ] && [ "$responseFirstWord" != "MISCONF" ]; then
+      echo "$response"
+      exit 1
+    fi
+
+  readiness-script.sh: |
+    #!/bin/bash
+
+    # Check if container is loading from master
+    info_replication=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 info replication)
+    role=$(echo "$info_replication" | grep role | awk -F: '{print $2}')
+    master_link_status=$(echo "$info_replication" | grep master_link_status | awk -F: '{print $2}')
+
+    if [ "$role" == "slave" ] && [ "$master_link_status" != "up" ]; then
+        echo "cache role: $role, status: $master_link_status"
+        exit 1
+    fi
+
+    # Check if container responds to ping
+    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    responseFirstWord=$(echo $response | head -n1 | awk '{print $1;}')
+
+    if [ "$response" != "PONG" ] && [ "$responseFirstWord" != "LOADING" ] && [ "$responseFirstWord" != "MASTERDOWN" ] && [ "$responseFirstWord" != "MISCONF" ]; then
       echo "$response"
       exit 1
     fi

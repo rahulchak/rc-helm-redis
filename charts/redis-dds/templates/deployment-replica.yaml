@@ -68,7 +68,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
+                - /redis-configs/liveness-script.sh {{ .Values.redis.config.port }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 30
