@@ -146,7 +146,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
+                - /redis-configs/liveness-script.sh {{ .Values.proxy.service.port }}
           readinessProbe:
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -157,7 +157,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh {{ .Values.proxy.service.port }}
+                - /redis-configs/liveness-script.sh {{ .Values.proxy.service.port }}
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
         {{- end }}
