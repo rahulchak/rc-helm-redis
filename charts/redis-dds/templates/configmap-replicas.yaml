@@ -153,7 +153,7 @@ data:
   readiness-script.sh: |
     #!/bin/bash
     response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
-    if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
+    if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ] && [ "$response" != "MISCONF Errors writing to the AOF file: No space left on device" ]; then
       echo "$response"
       exit 1
     fi
