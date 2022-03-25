@@ -159,6 +159,15 @@ data:
       exit 1
     fi
 
+  readiness-script.sh: |
+    #!/bin/bash
+    response=$(timeout -s9 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    responseFirstWord=$(echo $response | head -n1 | awk '{print $1;}')
+    if [ "$response" != "PONG" ] && [ "$responseFirstWord" != "MISCONF" ] && [ "$responseFirstWord" != "LOADING" ]; then
+      echo "$response"
+      exit 1
+    fi
+
   startup-script.sh: |
     #!/bin/bash
 

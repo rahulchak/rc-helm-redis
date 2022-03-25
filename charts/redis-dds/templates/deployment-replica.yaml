@@ -89,7 +89,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/liveness-script.sh {{ .Values.redis.config.port }}
+                - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
           resources:
             limits:
               cpu: {{ .Values.redis.resources.limits.cpu }}
