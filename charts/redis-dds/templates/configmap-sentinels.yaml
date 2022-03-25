@@ -119,7 +119,7 @@ data:
 
         echo "INFO - Sentinels are saying that $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is the master, double checking their memory"
 
-        response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT_NUMBER ping 2>/dev/null)
+        response=$(timeout -s9 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT_NUMBER ping 2>/dev/null)
         if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
             
             echo "INFO - Doesn't look like $REDIS_MASTER_HOST:$REDIS_MASTER_PORT_NUMBER is the master, searching for it"
@@ -162,7 +162,7 @@ data:
     
     if [[ "$SENTINEL_MODE" = "second" ]]; then
         # Get existing sentinels 
-        existing_sentinels=$(timeout -s 3 5 redis-cli --raw -h $SENTINELS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
+        existing_sentinels=$(timeout -s9 5 redis-cli --raw -h $SENTINELS_SERVICE -p {{ .Values.sentinel.config.port }} SENTINEL sentinels {{ .Release.Name }})
         echo "$existing_sentinels" | awk -f /redis-configs/parse_sentinels.awk | tee -a  /data/sentinel.conf > /dev/null
         echo >> /data/sentinel.conf
     fi
@@ -192,7 +192,7 @@ data:
 
   redis-ping.sh: |
     #!/bin/bash
-    response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    response=$(timeout -s9 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
     if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
       echo "$response"
       exit 1
@@ -209,7 +209,7 @@ data:
         export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
         export REDIS_MASTER_PORT=${REDIS_SENTINEL_INFO[1]}
         
-        response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
+        response=$(timeout -s9 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
         if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
           echo "Got error pinging redis, got: $response"
           exit 1
