@@ -190,7 +190,7 @@ data:
     # Start redis-server
     {{ .Values.image.command }} /data/sentinel.conf --sentinel
 
-  readiness-script.sh: |
+  redis-ping.sh: |
     #!/bin/bash
     response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
     if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then

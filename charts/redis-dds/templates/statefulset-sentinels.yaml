@@ -80,7 +80,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/readiness-script.sh 26379
+                - /redis-configs/redis-ping.sh 26379
           livenessProbe:
             initialDelaySeconds: 10 
             periodSeconds: 5
@@ -91,7 +91,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/sentinel-liveness-script.sh
+                - /redis-configs/redis-ping.sh 26379
           resources:
             {{- toYaml .Values.sentinel.resources | nindent 12 }}
       volumes:
