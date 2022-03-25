@@ -164,10 +164,10 @@ data:
 
     # Check if container is loading from master
     info_replication=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 info replication)
-    role=$(echo "$info_replication" | grep role | awk -F: '{print $2}')
-    master_link_status=$(echo "$info_replication" | grep master_link_status | awk -F: '{print $2}')
+    role=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 role | head -1)
+    master_link_status=$(echo "$info_replication" | grep master_link_status | awk -F: '{print $2}' | grep -c up)
 
-    if [ "$role" == "slave" ] && [ "$master_link_status" != "up" ]; then
+    if [ "$role" == "slave" ] && [ "$master_link_status" == "0" ]; then
         echo "cache role: $role, status: $master_link_status"
         exit 1
     fi
