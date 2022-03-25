@@ -152,7 +152,7 @@ data:
 
   liveness-script.sh: |
     #!/bin/bash
-    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
     responseFirstWord=$(echo $response | head -n1 | awk '{print $1;}')
     if [ "$response" != "PONG" ] && [ "$responseFirstWord" != "MISCONF" ]; then
       echo "$response"
@@ -163,8 +163,8 @@ data:
     #!/bin/bash
 
     # Check if container is loading from master
-    info_replication=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 info replication)
-    role=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 role | head -1)
+    info_replication=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 info replication)
+    role=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 role | head -1)
     master_link_status=$(echo "$info_replication" | grep master_link_status | awk -F: '{print $2}' | grep -c up)
 
     if [ "$role" == "slave" ] && [ "$master_link_status" == "0" ]; then
@@ -173,7 +173,7 @@ data:
     fi
 
     # Check if container responds to ping
-    response=$(timeout -s 3 10 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
+    response=$(timeout -s 3 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h localhost -p $1 ping)
     responseFirstWord=$(echo $response | head -n1 | awk '{print $1;}')
 
     if [ "$response" != "PONG" ] && [ "$responseFirstWord" != "LOADING" ] && [ "$responseFirstWord" != "MASTERDOWN" ] && [ "$responseFirstWord" != "MISCONF" ]; then
