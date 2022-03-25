@@ -138,10 +138,10 @@ spec:
               protocol: TCP
           livenessProbe:
             initialDelaySeconds: 10
-            periodSeconds: 10
+            periodSeconds: 5 
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 20
+            failureThreshold: 10
             exec:
               command:
                 - bash
@@ -149,10 +149,10 @@ spec:
                 - /redis-configs/liveness-script.sh {{ .Values.proxy.service.port }}
           readinessProbe:
             initialDelaySeconds: 10
-            periodSeconds: 10
+            periodSeconds: 5
             timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 20
+            failureThreshold: 10
             exec:
               command:
                 - bash

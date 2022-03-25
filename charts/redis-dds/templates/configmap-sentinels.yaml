@@ -201,13 +201,15 @@ data:
   sentinel-liveness-script.sh: |
     #!/bin/bash
 
-    # Get current master from myself
-    export REDIS_SENTINEL_INFO=($(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }}))
+    # This needs to be the liveness test, just in case the sentinels lose track of who the master should be
 
-    if [[ "$(echo $REDIS_SENTINEL_INFO | grep -c ERR)" == "0" ]] && [[ "$REDIS_SENTINEL_INFO" != "" ]] 
+    # Get current master from myself
+    export REDIS_MASTER_INFO=($(redis-cli -h localhost -p {{ .Values.sentinel.config.port }} sentinel get-master-addr-by-name {{ .Release.Name }}))
+
+    if [[ "$(echo $REDIS_MASTER_INFO | grep -c ERR)" == "0" ]] && [[ "$REDIS_MASTER_INFO" != "" ]] 
     then
-        export REDIS_MASTER_HOST=${REDIS_SENTINEL_INFO[0]}
-        export REDIS_MASTER_PORT=${REDIS_SENTINEL_INFO[1]}
+        export REDIS_MASTER_HOST=${REDIS_MASTER_INFO[0]}
+        export REDIS_MASTER_PORT=${REDIS_MASTER_INFO[1]}
         
         response=$(timeout -s9 5 redis-cli {{- if .Values.authentication.enabled }} -a $(< /vault/secrets/redisauth) {{- end }} -h $REDIS_MASTER_HOST -p $REDIS_MASTER_PORT ping)
         if [ "$response" != "PONG" ] && [ "$response" != "LOADING Redis is loading the dataset in memory" ]; then
@@ -215,7 +217,7 @@ data:
           exit 1
         fi
     else
-        echo "Got error connecting to sentinel: $REDIS_SENTINEL_INFO"
+        echo "Got error connecting to sentinel: $REDIS_MASTER_INFO"
         exit 1
     fi
 

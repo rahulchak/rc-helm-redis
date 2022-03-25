@@ -91,7 +91,7 @@ spec:
               command:
                 - bash
                 - -c
-                - /redis-configs/redis-ping.sh 26379
+                - /redis-configs/sentinel-liveness-script.sh
           resources:
             {{- toYaml .Values.sentinel.resources | nindent 12 }}
       volumes:
