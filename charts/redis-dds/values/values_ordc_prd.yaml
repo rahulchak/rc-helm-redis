@@ -1,6 +1,6 @@
 vault:
   # K8s role that is declared in vault
-  role: "k8s-dc2-prd-dds"
+  role: "k8s-dc1-prd-dds"
   # vault secret for environment variables
   environment:
   # vault secret for container arguments
