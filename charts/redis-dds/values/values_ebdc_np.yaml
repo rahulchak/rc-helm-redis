@@ -7,6 +7,7 @@ vault:
   arguments:
   # This is required, as using vault env/secrets requires a script to be ran to inject new values
   entrypoint:
+  injector_selector: onprem-np
 
 ingress:
   enabled: true
