@@ -48,6 +48,7 @@ redis:
     replTimeout: 360
     replBacklogSize: 100mb
     timeout: 360
+    databases: 16
   startup:
     healthCheckCount: 30
     sleepTime: 5
