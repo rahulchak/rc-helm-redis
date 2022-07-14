@@ -19,13 +19,13 @@ data:
     repl-diskless-sync {{ .replDisklessSync }}
     hz {{ .hz }}
     timeout {{ .timeout }}
+    databases {{ .databases }}
     {{- if $.Values.redis.stateful.enabled }}
     appendonly {{ .appendonly }}
     appendfsync {{ .appendfsync }}
     no-appendfsync-on-rewrite {{ .noAppendfsyncOnRewrite }}
     auto-aof-rewrite-min-size {{ .autoAofRewriteMinSize }}
     auto-aof-rewrite-percentage {{ .autoAofRewritePercentage }}
-    databases {{ .databases }}
     {{- end }}
     {{- end }}
     maxmemory {{ mul (div .Values.redis.size 10) 9 }}mb
