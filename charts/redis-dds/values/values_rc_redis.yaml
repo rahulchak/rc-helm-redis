@@ -1,0 +1,8 @@
+ingress:
+  enabled: true
+  domain: dc2.np.dds.chr8s.io
+  gslbDomain: np.dds.chr8s.io
+  aviPort: 6379
+  annotations: {}
+  health_monitor: "/api/healthmonitor?name=gslb-redis"
+  ratio: 20
