@@ -1,4 +1,4 @@
 ingress:
   enabled: true
-  domain: dc2.np.dds.chr8s.io
-  gslbDomain: np.dds.chr8s.io
+  domain: dc2.dev.rctest.io
+  gslbDomain: dev.rctest.io
