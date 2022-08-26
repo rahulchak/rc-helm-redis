@@ -1,4 +1,4 @@
-//ingress:
-//  enabled: true
-//  domain: dc2.np.dds.chr8s.io
-//  gslbDomain: np.dds.chr8s.io
+ingress:
+  enabled: true
+  domain: dc2.np.dds.chr8s.io
+  gslbDomain: np.dds.chr8s.io
