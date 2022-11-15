@@ -21,8 +21,8 @@ redis:
   service:
     type: ClusterIP
     annotations:
-      app.kubernetes.io/name: redis-dds
-      app.kubernetes.io/instance: redis-dds
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: redis
       app.kubernetes.io/version: 6.0.4
   resources:
     limits:
@@ -48,36 +48,3 @@ redis:
   startup:
     healthCheckCount: 30
     sleepTime: 5
-sentinel: 
-  replicas: 3
-  service:
-    type: ClusterIP
-    annotations:
-      app.kubernetes.io/name: redis-dds
-      app.kubernetes.io/instance: redis-dds
-      app.kubernetes.io/version: 6.0.4
-      service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 10m
-      memory: 128Mi
-  config:
-    port: 26379
-    dir: /data
-    downAfterMilliseconds: 10000
-    parallelSyncs: 2
-    failoverTimeout: 18000
-serviceAccount:
-  create: true
-  name: ""
-  annotations: {}
-podAnnotations: {}
-podSecurityContext: {}
-securityContext: 
-  allowPrivilegeEscalation: false
-nodeSelector: {}
-tolerations: []
-affinity: {}
