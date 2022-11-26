@@ -1,0 +1,134 @@
+{{ if and (eq (.Values.redis.replicas | int) 1) (not .Values.redis.stateful.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-replicas
+  labels:
+    {{- include "redis-dds.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "redis-dds.selectorLabels" . | nindent 6 }}
+  replicas: 1
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      annotations:
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap-replicas.yaml") . | sha256sum }}
+      {{- include "generic.vaultAnnotations" . | nindent 8 }}
+      labels:
+        app.kubernetes.io/role: "replica"
+        {{- include "redis-dds.selectorLabels" . | nindent 8 }}
+        vault-injector-selector: {{ .Values.vault.injector_selector }}
+    spec:
+      serviceAccountName: {{ include "redis-dds.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: disable-thp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          volumeMounts:
+            - name: host-sys
+              mountPath: /host-sys
+          command: ["/bin/sh", "-c"]
+          args: ["echo never > /host-sys/kernel/mm/transparent_hugepage/enabled"]
+      containers:
+        - name: {{ .Release.Name }}-replica
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash"]
+          args: ["/redis-configs/start-redis.sh"]
+          env:
+          - name: MY_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          volumeMounts:
+          - name: redis-config-volume
+            mountPath: /redis-configs
+          - name: redis-data
+            mountPath: /data
+          - name: host-sys
+            mountPath: /host-sys
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redis.config.port }}
+              protocol: TCP
+          startupProbe:
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 20
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/startup-script.sh {{ .Values.redis.config.port }}
+          livenessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 10
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/liveness-script.sh {{ .Values.redis.config.port }}
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 10
+            exec:
+              command:
+                - bash
+                - -c
+                - /redis-configs/readiness-script.sh {{ .Values.redis.config.port }}
+          resources:
+            limits:
+              cpu: {{ .Values.redis.resources.limits.cpu }}
+              memory: {{ add .Values.redis.size .Values.redis.buffer }}Mi
+            requests:
+              cpu: {{ .Values.redis.resources.requests.cpu }}
+              memory: {{ .Values.redis.size }}Mi
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - bash
+                  - -c
+                  - /redis-configs/prestop-redis.sh
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+        - name: redis-config-volume
+          configMap:
+            name: {{ include "redis-dds.fullname" . }}-replicas-config
+            defaultMode: 0755
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: temp-data
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
