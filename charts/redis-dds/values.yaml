@@ -16,7 +16,7 @@ redis:
     enabled: false
   replicas: 1
   ako:
-    enabled: true
+    enabled: false
     port: 6379
   service:
     type: ClusterIP
