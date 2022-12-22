@@ -194,7 +194,8 @@ data:
     fi
 
   prestop-redis.sh: |-
-
+    
+    {{ if or (gt (.Values.redis.replicas | int) 1) }}
     run_sentinel_command() {
         redis-cli -h "$SENTINELS_SERVICE" -p "{{ .Values.sentinel.config.port }}" sentinel "$@"
     }
@@ -240,3 +241,5 @@ data:
     else
         echo "INFO - I am not the master, exiting"
     fi
+    {{- end }}
+    
