@@ -151,6 +151,7 @@ data:
     /app/bin/redis-rust-proxy --master {{ .Release.Name }}\
       --sentinel $SENTINEL_SERVICE:{{ .Values.sentinel.config.port }}\
       --listen 0.0.0.0:{{ .Values.proxy.service.port }} {{- if .Values.authentication.enabled }} --password $(< /vault/secrets/redisauth) {{- end }} 
+    {{- end }}
 
   liveness-script.sh: |
     #!/bin/bash
