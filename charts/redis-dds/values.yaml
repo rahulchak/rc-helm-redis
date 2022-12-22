@@ -50,3 +50,14 @@ redis:
   startup:
     healthCheckCount: 30
     sleepTime: 5
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: 
+  allowPrivilegeEscalation: false
+nodeSelector: {}
+tolerations: []
+affinity: {}
