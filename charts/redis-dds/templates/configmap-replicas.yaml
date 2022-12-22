@@ -116,6 +116,7 @@ data:
 
   start-proxy.sh: |
 
+    {{ if or (gt (.Values.redis.replicas | int) 1) }}
     SENTINEL_SERVICE="{{ .Release.Name }}-sentinels.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}"
     echo "INFO - SENTINEL_SERVICE: $SENTINEL_SERVICE"
 
