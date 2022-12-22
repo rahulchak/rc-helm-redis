@@ -5,7 +5,6 @@ fullnameOverride: ""
 
 authentication:
   enabled: false
-  
 image:
   registry: docker.io
   repository: redis
