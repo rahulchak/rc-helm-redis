@@ -1,4 +1,0 @@
-ingress:
-  enabled: true
-  domain: dc2.dev.rctest.io
-  gslbDomain: dev.rctest.io
