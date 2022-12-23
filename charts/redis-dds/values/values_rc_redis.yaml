@@ -1,3 +1,6 @@
+vault:
+  # K8s role that is declared in vault
+  enabled: false
 ingress:
   enabled: true
   domain: dc2.dev.rctest.io
