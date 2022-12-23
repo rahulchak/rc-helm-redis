@@ -22,7 +22,7 @@ spec:
       labels:
         app.kubernetes.io/role: "replica"
         {{- include "redis-dds.selectorLabels" . | nindent 8 }}
-        if {{ .Values.vault.enabled }}
+        {{ if .Values.vault.enabled }}
           vault-injector-selector: {{ .Values.vault.injector_selector }}
         {{- end }}
     spec:
