@@ -29,7 +29,7 @@ data:
     {{- end }}
     {{- end }}
     maxmemory {{ mul (div .Values.redis.size 10) 9 }}mb
-    {{- if .Values.authentication.enabled }}
+    {{- if $.Values.authentication.enabled }}
     requirepass REDISAUTH
     masterauth REDISAUTH
     {{ end }}    
