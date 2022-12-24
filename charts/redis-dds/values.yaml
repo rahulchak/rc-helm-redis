@@ -36,6 +36,7 @@ redis:
       cpu: 10m
   config:
     port: 6379
+    targetPort: 6379
     maxmemoryPolicy: allkeys-lru
     dir: /data
     appendonly: "yes"
