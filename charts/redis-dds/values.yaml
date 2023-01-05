@@ -57,7 +57,7 @@ redis:
 sentinel: 
   replicas: 2
   service:
-    type: LoadBalancer
+    type: ClusterIP
     annotations:
       app.kubernetes.io/name: redis
       app.kubernetes.io/instance: redis
@@ -76,6 +76,22 @@ sentinel:
     downAfterMilliseconds: 10000
     parallelSyncs: 2
     failoverTimeout: 18000    
+proxy:
+  image:
+    registry: docker.io
+    repository: findelabs/redis-rust-proxy
+    pullPolicy: IfNotPresent
+    tag: 0.2.11
+  service: 
+    type: ClusterIP
+    port: 6378
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 128Mi    
 serviceAccount:
   create: true
   name: ""
