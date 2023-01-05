@@ -19,7 +19,7 @@ redis:
   buffer: 1024
   stateful: 
     enabled: false
-  replicas: 2
+  replicas: 1
   ako:
     enabled: false
     port: 6379
