@@ -24,7 +24,7 @@ redis:
     enabled: false
     port: 6379
   service:
-    type: LoadBalancer
+    type: ClusterIP
     annotations:
       app.kubernetes.io/name: redis
       app.kubernetes.io/instance: redis
